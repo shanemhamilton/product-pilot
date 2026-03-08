@@ -87,7 +87,7 @@ Top metrics to optimize for (full definitions in `METRICS_AND_OKRS.md` if it exi
 **Context depth by task type:**
 - **Quick task** (bug fix, config change): Read only this Pilot
 - **Feature work**: Read this Pilot + `FEATURE_INVENTORY.md` + `ROADMAP.md`
-- **Strategic work** (new phase, pivot, major planning): Read all docs in `docs/product/`
+- **Strategic work** (new phase, pivot, major planning): Read all docs in this directory
 
 ### Session End — Update relevant docs and commit changes alongside code
 Skip if your changes were trivial (typo fixes, config tweaks, non-functional changes). The checklist is for work that changes what the product does or how it's measured.

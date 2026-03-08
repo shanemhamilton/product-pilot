@@ -31,11 +31,15 @@ Ask the user which scope they want. Default to **Full** if not specified.
 
 **Teams mode (optional):** If Claude Code agent teams are enabled, Step 4 can spawn teammates to generate supporting docs in parallel. Each teammate owns one file — no conflicts. This cuts generation time significantly for Full scope. Teams mode is automatic when available; no user action needed beyond having teams enabled.
 
+**`{PRODUCT_DOCS}` convention:** This skill uses `{PRODUCT_DOCS}` as a variable for the product docs directory path. Step 0 resolves this to an actual path (e.g., `docs/product/`, `documentation/product/`). When generating files or reference blocks, substitute the resolved path everywhere you see `{PRODUCT_DOCS}`.
+
+**Output format:** All generated files are markdown (`.md`). Markdown is the optimal format for AI agents — it's structured, parseable, and readable by both humans and machines. Do not generate product docs in any other format.
+
 ---
 
 ## Update Mode (runs instead of Steps 0-6 when Product Pilot already exists)
 
-If `docs/product/PRODUCT_PILOT.md` exists, skip Steps 0-6 and run this section instead.
+If a `PRODUCT_PILOT.md` file exists anywhere in the project (check `{PRODUCT_DOCS}`, or search for it), skip Steps 0-6 and run this section instead. Use its location as `{PRODUCT_DOCS}`.
 
 ### What changed? (ask the user)
 
@@ -64,7 +68,7 @@ Always update the date comment (`<!-- Last updated: -->` or `<!-- Last reviewed:
 
 If supporting docs are missing and you want to add them (e.g., upgrading from Micro to Lite or Full):
 
-1. Check which docs from the Step 4 table are missing in `docs/product/`
+1. Check which docs from the Step 4 table are missing in `{PRODUCT_DOCS}`
 2. Run the relevant interview questions for the missing docs (see scope table at top)
 3. Generate only the missing docs using Step 4
 4. Update the Product Docs Index in PRODUCT_PILOT.md to include the new docs
@@ -83,10 +87,20 @@ If supporting docs are missing and you want to add them (e.g., upgrading from Mi
 
 Before starting, assess what exists. Run these checks:
 
+### Resolve `{PRODUCT_DOCS}` path
+
+Find where product docs should live. Check in this order:
+
+1. **Existing product docs directory** — Search for `PRODUCT_PILOT.md`, `PRODUCT_OVERVIEW.md`, `ROADMAP.md`, or similar product docs anywhere in the project. If found, use their parent directory.
+2. **Existing docs directory** — Look for `docs/`, `documentation/`, `doc/`, or similar top-level documentation directories. If one exists, use `{existing_docs_dir}/product/` (e.g., `documentation/product/`).
+3. **Default** — If no docs directory exists, use `docs/product/`.
+
+Once resolved, use this path as `{PRODUCT_DOCS}` for the rest of the setup. Tell the user: "I'll put product docs in `{resolved_path}` — does that work?"
+
 ### Check the project structure
 
 ```
-- Does `docs/product/` exist? If yes, check what's already there.
+- Does `{PRODUCT_DOCS}` exist? If yes, check what's already there.
 - Does an agent instruction file exist? Look for: CLAUDE.md, .cursorrules, .cursor/rules,
   AGENTS.md, or a system prompt file.
 - Does a README exist? It often contains product context to extract.
@@ -244,13 +258,13 @@ One sentence: why would someone choose your product over the alternatives?
 
 ## Step 4: Generate the 6 Supporting Documents
 
-Create `docs/product/` if it doesn't exist. Read each template only when generating that specific document. For each:
+Create `{PRODUCT_DOCS}` if it doesn't exist. Read each template only when generating that specific document. For each:
 
 1. Read the template from this skill's `templates/` directory
 2. Fill in all `[PLACEHOLDER: ...]` markers using the interview answers from Steps 1-3
 3. For any placeholders you can't fill from the interview, make reasonable inferences
    from the codebase (README, code structure, git history) or convert to a `[TODO: ...]` marker
-4. Save to `docs/product/`
+4. Save to `{PRODUCT_DOCS}`
 
 **Important:** All `[PLACEHOLDER: ...]` markers must be either replaced with real content or converted to `[TODO: ...]`. The only marker allowed in final output is `[TODO: ...]`. No `[PLACEHOLDER: ...]` should survive into the generated docs.
 
@@ -272,7 +286,7 @@ Create `docs/product/` if it doesn't exist. Read each template only when generat
 
 ### Teams mode: parallel generation
 
-If agent teams are enabled, spawn teammates to generate docs in parallel instead of generating them sequentially. Create `docs/product/` first, then spawn the team.
+If agent teams are enabled, spawn teammates to generate docs in parallel instead of generating them sequentially. Create `{PRODUCT_DOCS}` first, then spawn the team.
 
 **Team structure (Full scope — 3 teammates):**
 
@@ -285,7 +299,7 @@ If agent teams are enabled, spawn teammates to generate docs in parallel instead
 Each teammate's prompt must include:
 1. The interview answers from Steps 1-3 (all of them — teammates don't share the lead's context)
 2. Which templates to read from this skill's `templates/` directory
-3. The target file paths in `docs/product/`
+3. The target file paths in `{PRODUCT_DOCS}`
 4. The target length for each doc (from the table above)
 5. The placeholder/TODO rule: replace all `[PLACEHOLDER: ...]` with real content or `[TODO: ...]`
 
@@ -365,10 +379,10 @@ Read `references/CLAUDE_MD_REFERENCE.md` for the reference block to add.
 
 The reference block should:
 - Be marked MANDATORY
-- Tell the agent to read `docs/product/PRODUCT_PILOT.md` before starting work
+- Tell the agent to read `{PRODUCT_DOCS}PRODUCT_PILOT.md` before starting work
 - Tell the agent to follow the session-end checklist when done
 - Reference PM skills if available
-- Point to `docs/product/` for deep context
+- Point to `{PRODUCT_DOCS}` for deep context
 
 ### What to remove
 

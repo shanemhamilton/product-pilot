@@ -29,7 +29,9 @@ In Claude Code, say any of:
 - "Make my agent product-aware"
 - `/product-pilot`
 
-The skill runs a short interview about your product, then generates a `docs/product/` directory with your Product Pilot and supporting docs.
+The skill runs a short interview about your product, then generates a product docs directory with your Product Pilot and supporting markdown files. All generated files are markdown — optimized for AI agents to read and maintain.
+
+The skill auto-detects your project's existing docs directory (`docs/`, `documentation/`, `doc/`, etc.) and creates a `product/` subdirectory inside it. If no docs directory exists, it defaults to `docs/product/`.
 
 ## Scope Options
 
@@ -42,7 +44,7 @@ The skill runs a short interview about your product, then generates a `docs/prod
 ### Generated files (Full scope)
 
 ```
-docs/product/
+{your-docs-dir}/product/
   PRODUCT_PILOT.md          # The main file your agent reads every session
   PRODUCT_OVERVIEW.md        # What the product is, who it's for, core principles
   FEATURE_INVENTORY.md       # What's built, what's planned, feature status
