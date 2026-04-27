@@ -2,44 +2,72 @@
 ---
 name: product-pilot
 description: >
-  Bootstrap a Product Pilot for any project. The Product Pilot gives AI coding agents
-  product awareness — what phase you're in, what to work on next, and what docs to update
-  when done. Use when the user says: "set up a product pilot", "set up a product pilot",
-  "create product context for my project", "bootstrap product docs", "set up product pilot",
-  "make my agent product-aware", "create product management docs", or any request to establish
-  product documentation that AI agents can maintain. Also use when the user asks "how do I give
-  my AI agent product context" or "how do I keep my product docs up to date automatically."
-version: "2.0"
+  Product Pilot — the AI-agent product context system. Use in three situations:
+  (1) Session start — when loading product context before beginning work ("what should I work on",
+  "what's the current milestone", "read the product pilot", "catch me up on where we are",
+  "what phase are we in", "what's blocking us");
+  (2) Setup — when a project has no product docs yet ("set up product pilot", "create product
+  context", "bootstrap product docs", "make my agent product-aware");
+  (3) Update — when a milestone completes or phase shifts ("update the pilot", "milestone done",
+  "we moved to the next phase", "log what we shipped"). When in doubt, trigger this skill — it
+  detects the right mode automatically based on what exists in the project.
+version: "2.1"
 ---
 
 # Product Pilot — Setup Skill
 
-This skill walks you through creating a Product Pilot for any project.
-The Product Pilot is a standalone file that gives AI coding agents product awareness — what phase
-you're in, what milestone is active, what metrics matter, and what docs to update when
-work is done.
-
-**Choose your scope:**
-
-| Scope | What you get | Interview Qs | Time |
-|-------|-------------|--------------|------|
-| **Full** | Product Pilot + 6 supporting docs + reference block | All 12 | 15-20 min |
-| **Lite** | Product Pilot + PRODUCT_OVERVIEW + FEATURE_INVENTORY + ROADMAP + reference block | Q1-Q10 (skip Q11-Q12) | 10-15 min |
-| **Micro** | Product Pilot + reference block only | Q1-Q8 (skip Q9-Q12) | 5-10 min |
-
-Ask the user which scope they want. Default to **Full** if not specified.
-
-**Teams mode (optional):** If Claude Code agent teams are enabled, Step 4 can spawn teammates to generate supporting docs in parallel. Each teammate owns one file — no conflicts. This cuts generation time significantly for Full scope. Teams mode is automatic when available; no user action needed beyond having teams enabled.
-
-**`{PRODUCT_DOCS}` convention:** This skill uses `{PRODUCT_DOCS}` as a variable for the product docs directory path. Step 0 resolves this to an actual path (e.g., `docs/product/`, `documentation/product/`). When generating files or reference blocks, substitute the resolved path everywhere you see `{PRODUCT_DOCS}`.
-
-**Output format:** All generated files are markdown (`.md`). Markdown is the optimal format for AI agents — it's structured, parseable, and readable by both humans and machines. Do not generate product docs in any other format.
+This skill creates and maintains a Product Pilot — a standalone file that gives AI coding agents product awareness: what phase you're in, what milestone is active, what metrics matter, and what docs to update when done.
 
 ---
 
-## Update Mode (runs instead of Steps 0-6 when Product Pilot already exists)
+## Mode Detection
 
-If a `PRODUCT_PILOT.md` file exists anywhere in the project (check `{PRODUCT_DOCS}`, or search for it), skip Steps 0-6 and run this section instead. Use its location as `{PRODUCT_DOCS}`.
+Before doing anything, determine which mode to run:
+
+| Signal | Mode | What you'll do |
+|--------|------|---------------|
+| Pilot exists AND user wants context / is starting a session | **Context** | Read pilot → produce brief orientation |
+| Pilot exists AND user mentions changes, completion, or updates | **Update** | Ask what changed → update relevant docs |
+| No pilot anywhere in the project | **Setup** | Interview → generate docs |
+| User explicitly says "set up" or "bootstrap" | **Setup** | Interview → generate docs (even if pilot exists) |
+
+**Context mode is the most common.** When the pilot exists and the user says "start of session" or asks what to work on, run Context mode — not Setup, not Update.
+
+---
+
+## Context Mode (session start — fastest path)
+
+Run when `PRODUCT_PILOT.md` exists and no setup or update is requested.
+
+If there is no pilot yet, fall through to **Setup mode** instead.
+
+### Step 1: Read and locate
+Read `PRODUCT_PILOT.md`. Find the `← ACTIVE` or `<- ACTIVE` milestone.
+
+### Step 2: Synthesize a brief orientation
+Report (under 150 words):
+- **Phase** — current phase name and goal
+- **Active milestone** — name, unchecked `[ ]` tasks, completion signal
+- **Top blocker** — from the "What's blocking" field
+- **Metrics at risk** — any metric where Current is significantly below Target (flag these; skip metrics that are "Pre-launch")
+
+### Step 3: Freshness checks (run in order, stop at first applicable)
+1. If `<!-- Last updated: -->` is more than 30 days old → flag: "The pilot is X days stale — consider a review after this session."
+2. If every task in `← ACTIVE` is checked `[x]` → prompt: "Milestone [X] looks complete. Should we advance `← ACTIVE` to the next milestone?"
+3. If PRODUCT_PILOT.md is over 110 lines → note: "The pilot has grown past 110 lines — operational detail may need moving to a supporting doc."
+
+### Step 4: Connect to current task
+If the user's task aligns with the active milestone, say so. If it diverges, note the divergence briefly and offer to log it at session end via Update mode.
+
+**That's it.** No questions, no doc generation. Switch to Update mode if the user wants to log changes.
+
+---
+
+## Update Mode
+
+If a `PRODUCT_PILOT.md` file exists anywhere in the project (check `{PRODUCT_DOCS}`, or search for it), run this section. Use its location as `{PRODUCT_DOCS}`.
+
+**Shortcut:** If this is a periodic review with no specific changes → skip to the Periodic Review checklist at the bottom of this section.
 
 ### What changed? (ask the user)
 
@@ -55,12 +83,13 @@ If nothing changed and the user wants a periodic review → skip to the Periodic
 
 | Change type | Files to update | What to do |
 |-------------|----------------|------------|
-| Milestone completed | PRODUCT_PILOT.md + ROADMAP.md | Check off items, advance `← ACTIVE` to next milestone |
+| Milestone completed | PRODUCT_PILOT.md + ROADMAP.md | Check off items, advance `← ACTIVE` to next milestone. In PRODUCT_PILOT.md, remove the completed milestone block if it's making the file longer than 110 lines — full detail lives in ROADMAP.md. |
 | Phase transition | PRODUCT_PILOT.md + ROADMAP.md | Move `← ACTIVE` to first milestone of new phase, update "Current phase" and transitions table |
 | Metrics refresh | PRODUCT_PILOT.md + METRICS_AND_OKRS.md | Replace Pre-launch/TBD with actual values in both files |
 | New milestone | ROADMAP.md first, then PRODUCT_PILOT.md | Add to correct phase with checklist + completion signal |
 | Competitive update | COMPETITIVE_LANDSCAPE.md | Add/update competitor entry; refresh differentiator if positioning shifted |
 | Feature shipped | FEATURE_INVENTORY.md | Add feature card with status, problem, solution, key metric |
+| Pilot over 110 lines | PRODUCT_PILOT.md | Move operational detail (commit hashes, specific files, sub-task tracking) to supporting docs. Keep only: phase, active milestone tasks, completion signal, top blocker (1-3 sentences), metrics snapshot. |
 
 Always update the date comment (`<!-- Last updated: -->` or `<!-- Last reviewed: -->`) in any file you modify.
 
@@ -80,6 +109,33 @@ If supporting docs are missing and you want to add them (e.g., upgrading from Mi
 - [ ] METRICS_AND_OKRS.md: Set new quarterly OKRs; retire stale metrics
 - [ ] ROADMAP.md: Re-evaluate upcoming items; remove items no longer relevant
 - [ ] All files: Update `<!-- Last reviewed: -->` dates
+
+---
+
+## Setup Mode
+
+Run when no `PRODUCT_PILOT.md` exists, or when the user explicitly requests setup.
+
+**`{PRODUCT_DOCS}` convention:** This skill uses `{PRODUCT_DOCS}` as a variable for the product docs directory path. Step 0 resolves this to an actual path (e.g., `docs/product/`). Substitute the resolved path everywhere you see `{PRODUCT_DOCS}`.
+
+**Output format:** All generated files are markdown (`.md`) — structured, parseable, and readable by both humans and machines.
+
+**Choose scope after Step 0 (not before).** Run the pre-setup audit first, then recommend a scope based on what you find:
+
+| What Step 0 found | Recommended scope |
+|-------------------|------------------|
+| No product docs, greenfield project | **Micro** (start small) or **Full** (if user has clear product context) |
+| README + code, no product docs | **Lite** (extract from README, generate 3 core docs) |
+| Some supporting docs exist | **Full** (fill gaps, synthesize into Pilot) |
+| Full supporting docs, no Pilot | **Pilot-only** (skip Step 4 entirely — just generate PRODUCT_PILOT.md) |
+
+Present your recommendation with reasoning: "Based on what I found, I'd recommend [scope] because [reason]. Want Full, Lite, or Micro instead?" Default to **Full** if the user has clear product context and wants everything.
+
+| Scope | What you get | Interview Qs | Time |
+|-------|-------------|--------------|------|
+| **Full** | Product Pilot + 6 supporting docs + reference block | All 12 | 15-20 min |
+| **Lite** | Product Pilot + PRODUCT_OVERVIEW + FEATURE_INVENTORY + ROADMAP + reference block | Q1-Q10 | 10-15 min |
+| **Micro** | Product Pilot + reference block only | Q1-Q8 | 5-10 min |
 
 ---
 
@@ -284,30 +340,14 @@ Create `{PRODUCT_DOCS}` if it doesn't exist. Read each template only when genera
 | `USER_RESEARCH.md` | `templates/USER_RESEARCH_TEMPLATE.md` | Q2 | ~80-150 lines |
 | `ROADMAP.md` | `templates/ROADMAP_TEMPLATE.md` | Q3, Q4, Q8, Q9, Q10 | ~80-200 lines |
 
-### Teams mode: parallel generation
+### Teams mode (optional — Full scope only)
 
-If agent teams are enabled, spawn teammates to generate docs in parallel instead of generating them sequentially. Create `{PRODUCT_DOCS}` first, then spawn the team.
+If agent teams are enabled, spawn 3 teammates in parallel instead of generating docs sequentially. Create `{PRODUCT_DOCS}` first, then spawn:
+- **Product Strategist**: PRODUCT_OVERVIEW + COMPETITIVE_LANDSCAPE (Q1, Q2, Q5, Q11, Q12)
+- **Roadmap Engineer**: ROADMAP + METRICS_AND_OKRS (Q3, Q4, Q6-Q10)
+- **User Researcher**: USER_RESEARCH + FEATURE_INVENTORY (Q2 + code audit)
 
-**Team structure (Full scope — 3 teammates):**
-
-| Teammate | Docs to generate | Why grouped |
-|----------|-----------------|-------------|
-| **Product Strategist** | PRODUCT_OVERVIEW + COMPETITIVE_LANDSCAPE | Both draw from product identity (Q1, Q2, Q5, Q11, Q12) |
-| **Roadmap Engineer** | ROADMAP + METRICS_AND_OKRS | Both draw from milestones and metrics (Q3, Q4, Q6-Q10) |
-| **User Researcher** | USER_RESEARCH + FEATURE_INVENTORY | Both draw from user segments and codebase (Q2 + code audit) |
-
-Each teammate's prompt must include:
-1. The interview answers from Steps 1-3 (all of them — teammates don't share the lead's context)
-2. Which templates to read from this skill's `templates/` directory
-3. The target file paths in `{PRODUCT_DOCS}`
-4. The target length for each doc (from the table above)
-5. The placeholder/TODO rule: replace all `[PLACEHOLDER: ...]` with real content or `[TODO: ...]`
-
-**Lite scope (2 teammates):** Split PRODUCT_OVERVIEW to one, FEATURE_INVENTORY + ROADMAP to the other. Or just use sequential generation — 3 docs doesn't justify team overhead.
-
-**Micro scope:** No teammates needed — skip Step 4 entirely.
-
-After all teammates complete, the lead proceeds to Step 5 (create PRODUCT_PILOT.md) by synthesizing across all generated docs.
+Each teammate prompt must include: full interview answers, template paths, target file paths, target lengths, and the placeholder rule. Lite scope (3 docs) rarely justifies team overhead — generate sequentially. After all teammates complete, lead proceeds to Step 5.
 
 ### Feature inventory from codebase
 
@@ -412,6 +452,33 @@ After completing setup, verify everything:
 - [ ] ROADMAP milestones match Product Pilot milestones
 - [ ] Metrics in Product Pilot snapshot match METRICS_AND_OKRS definitions
 - [ ] FEATURE_INVENTORY categories match codebase reality
+
+### Pilot Health Check
+
+- [ ] PRODUCT_PILOT.md is 110 lines or fewer
+- [ ] "What's blocking" is 1-3 sentences max — operational detail (commit hashes, specific files) belongs in a supporting doc like GA_LAUNCH_PLAN.md
+- [ ] No milestone has more than 10 tasks — if so, split into sub-milestones
+- [ ] No `← ACTIVE` milestone has all tasks checked (if all done, advance to next milestone)
+- [ ] The pilot is readable in under 2 minutes — if not, it needs trimming
+
+---
+
+## Output Standards
+
+These rules apply whenever this skill generates content or reviews product state. They exist because the common failure modes in product doc work are sycophantic reviews and fabricated data — both of which produce documents that look good but actively mislead agents.
+
+**When reviewing milestone completeness or running a Periodic Review:**
+- Lead with what's stale, blocked, or below target — not with what's done
+- Check the completion signal criteria explicitly; "looks done" is not an assessment
+- Name issues specifically: "D7 retention at 18% vs 30% target" not "retention needs work"
+- A Periodic Review that finds nothing wrong is a sign you didn't look hard enough
+
+**When generating or updating product docs:**
+- Never invent metric targets — only use values the user provides; mark gaps as `[TODO: add target]`
+- Never fabricate competitor data, pricing, or feature comparisons — mark as `[TODO: research]`
+- No `[PLACEHOLDER: ...]` marker may survive into final files — replace with real content or convert to `[TODO: ...]`
+- Don't infer completion signals from milestone names — ask if the user hasn't specified one
+- Don't round or approximate numbers: "28% retention" not "~30%"
 
 ---
 

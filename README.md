@@ -62,6 +62,38 @@ If you have Claude Code agent teams enabled, the skill automatically parallelize
 
 If a Product Pilot already exists, the skill switches to update mode: it asks what changed and updates only the relevant files. Run periodically to keep docs current.
 
+## Recommended CLAUDE.md Setup
+
+The skill adds a **Product Pilot reference block** to your agent instruction file automatically during setup. That block tells your agent to read the Pilot at session start and follow the session-end checklist.
+
+For better results, add these rules manually to the same instruction file. They address the two most common failure modes in AI-assisted product work — sycophantic status reviews and fabricated data in docs.
+
+### Anti-sycophancy
+
+```markdown
+## Product Review Standards
+
+When reviewing milestones or running a Pilot review:
+- Lead with what is stale, blocked, or below target — not with what is done
+- Check completion signal criteria explicitly; "looks done" is not an assessment
+- A clean review with no issues is a sign you didn't look hard enough
+- Name issues specifically: metric name, current value, and target — not "needs work"
+```
+
+### Anti-hallucination
+
+```markdown
+## Product Doc Standards
+
+When generating or updating product docs:
+- Never invent metric targets — only use values provided by the user; mark gaps as [TODO: add target]
+- Never fabricate competitor data, pricing, or feature comparisons — mark as [TODO: research]
+- No [PLACEHOLDER: ...] marker may survive into final files — replace with real content or [TODO: ...]
+- Don't round numbers: write "28% retention" not "~30%"
+```
+
+These rules are intentionally omitted from the skill itself — they may conflict with your project's existing agent instruction style. Add the ones that fit.
+
 ## License
 
 [MIT](LICENSE)
