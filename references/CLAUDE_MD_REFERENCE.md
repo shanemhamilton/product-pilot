@@ -29,6 +29,9 @@ alongside code changes.
 
 For deep context: see the files in `{PRODUCT_DOCS}` (Pilot, vision, features, roadmap,
 metrics, research, competitive).
+
+When reviewing or updating product docs: lead with what's stale or blocking, not what's
+working. Never invent metric targets or competitor data — mark unknowns as [TODO].
 ```
 
 ## For .cursorrules (Cursor)

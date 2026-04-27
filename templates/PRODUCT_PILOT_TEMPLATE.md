@@ -1,16 +1,17 @@
 # Product Pilot
 
 <!-- MANDATORY: Read this file at the start of every session. -->
-<!-- Product Pilot format version: 2.0 -->
+<!-- Product Pilot format version: 2.1 -->
 <!-- Last updated: [PLACEHOLDER: DATE] -->
 <!-- Owner: [PLACEHOLDER: OWNER_NAME] -->
+<!-- Target: under 110 lines. Move operational detail (commit hashes, sub-task tracking) to supporting docs when this file grows. -->
 
 ## Quick Orientation
 
 [PLACEHOLDER: PRODUCT_DESCRIPTION — 2-3 sentences describing what the product does and who it's for]
 
 **Current phase:** [PLACEHOLDER: PHASE_NUMBER] — [PLACEHOLDER: PHASE_NAME]
-**What's blocking:** [PLACEHOLDER: TOP_BLOCKER — what must happen next]
+**What's blocking:** [PLACEHOLDER: TOP_BLOCKER — 1-3 sentences max. Name the blocker and what would unblock it. Keep commit hashes and specific file names in supporting docs, not here.]
 **Deep context:** See the supporting docs indexed at the bottom of this file.
 
 ---
