@@ -11,12 +11,14 @@ description: >
   (3) Update — when a milestone completes or phase shifts ("update the pilot", "milestone done",
   "we moved to the next phase", "log what we shipped"). When in doubt, trigger this skill — it
   detects the right mode automatically based on what exists in the project.
-version: "2.1"
+version: "2.2"
 ---
 
 # Product Pilot — Setup Skill
 
-This skill creates and maintains a Product Pilot — a standalone file that gives AI coding agents product awareness: what phase you're in, what milestone is active, what metrics matter, and what docs to update when done.
+This skill creates and maintains a Product Pilot — a standalone file that gives AI coding agents product awareness: what phase you're in, what milestone is active, what's blocking ship, what metrics matter, what just shipped, what decisions are pending, and what docs to update when done.
+
+**Honest scope note:** This skill does not enforce session-start reads or session-end doc updates — those are the agent's voluntary responsibility. See `TOOLING_GAPS.md` for the harness gaps and what tenants can do to close them.
 
 ---
 
@@ -48,13 +50,17 @@ Read `PRODUCT_PILOT.md`. Find the `← ACTIVE` or `<- ACTIVE` milestone.
 Report (under 150 words):
 - **Phase** — current phase name and goal
 - **Active milestone** — name, unchecked `[ ]` tasks, completion signal
-- **Top blocker** — from the "What's blocking" field
+- **Top blocker** — from the bulletized "What's Blocking Ship" section (name the blocker, what unblocks it, owner)
+- **Recent shipped count** — number of items in the Recent Shipped section since its heading date
 - **Metrics at risk** — any metric where Current is significantly below Target (flag these; skip metrics that are "Pre-launch")
+- **Pending decisions** — count of rows in Decision Pending; flag any older than 30 days
 
 ### Step 3: Freshness checks (run in order, stop at first applicable)
-1. If `<!-- Last updated: -->` is more than 30 days old → flag: "The pilot is X days stale — consider a review after this session."
-2. If every task in `← ACTIVE` is checked `[x]` → prompt: "Milestone [X] looks complete. Should we advance `← ACTIVE` to the next milestone?"
-3. If PRODUCT_PILOT.md is over 110 lines → note: "The pilot has grown past 110 lines — operational detail may need moving to a supporting doc."
+1. Compare `<!-- Last commit captured: HASH -->` against `git rev-parse --short HEAD`. If they differ by more than 10 commits → flag: "The Pilot's last commit anchor is X commits behind HEAD — Recent Shipped is stale. Run the regenerate command before proceeding."
+2. If `<!-- Last updated: -->` is more than 30 days old → flag: "The Pilot is X days stale — consider a review after this session."
+3. If every task in `← ACTIVE` is checked `[x]` → prompt: "Milestone [X] looks complete. Should we advance `← ACTIVE` to the next milestone?"
+4. If PRODUCT_PILOT.md is over 140 lines → note: "The Pilot has grown past 140 lines — operational detail may need moving to a supporting doc."
+5. If the Product Docs Index has any `Last reviewed` date more than 30 days old → flag: "[DOC] hasn't been reviewed in over 30 days. Consider updating it this session or scheduling a review."
 
 ### Step 4: Connect to current task
 If the user's task aligns with the active milestone, say so. If it diverges, note the divergence briefly and offer to log it at session end via Update mode.
@@ -83,15 +89,18 @@ If nothing changed and the user wants a periodic review → skip to the Periodic
 
 | Change type | Files to update | What to do |
 |-------------|----------------|------------|
-| Milestone completed | PRODUCT_PILOT.md + ROADMAP.md | Check off items, advance `← ACTIVE` to next milestone. In PRODUCT_PILOT.md, remove the completed milestone block if it's making the file longer than 110 lines — full detail lives in ROADMAP.md. |
-| Phase transition | PRODUCT_PILOT.md + ROADMAP.md | Move `← ACTIVE` to first milestone of new phase, update "Current phase" and transitions table |
-| Metrics refresh | PRODUCT_PILOT.md + METRICS_AND_OKRS.md | Replace Pre-launch/TBD with actual values in both files |
+| Milestone completed | PRODUCT_PILOT.md + ROADMAP.md | Check off items, advance `← ACTIVE` to next milestone. In PRODUCT_PILOT.md, move the completed milestone summary into the Recent Shipped section if Pilot length is above 140 — full detail lives in ROADMAP.md. |
+| Phase transition | PRODUCT_PILOT.md + ROADMAP.md | Move `← ACTIVE` to first milestone of new phase, update "Current phase" and the next-transition row |
+| Metrics refresh | PRODUCT_PILOT.md + METRICS_AND_OKRS.md | Replace Pre-launch/TBD with actual values in both files; verify both agree |
 | New milestone | ROADMAP.md first, then PRODUCT_PILOT.md | Add to correct phase with checklist + completion signal |
 | Competitive update | COMPETITIVE_LANDSCAPE.md | Add/update competitor entry; refresh differentiator if positioning shifted |
-| Feature shipped | FEATURE_INVENTORY.md | Add feature card with status, problem, solution, key metric |
-| Pilot over 110 lines | PRODUCT_PILOT.md | Move operational detail (commit hashes, specific files, sub-task tracking) to supporting docs. Keep only: phase, active milestone tasks, completion signal, top blocker (1-3 sentences), metrics snapshot. |
+| Feature shipped | FEATURE_INVENTORY.md + Pilot Recent Shipped | Add feature card with status, problem, solution, key metric; add a short_hash + one-line summary to Recent Shipped |
+| New blocker / unblock | PRODUCT_PILOT.md | Update "What's Blocking Ship" — bulletized only, never prose paragraphs. Each blocker needs unblock condition, owner, since-date |
+| Aging proposal | PRODUCT_PILOT.md | Add row to Decision Pending with owner + since-date. If a row sits there >30 days, force a kill or schedule decision |
+| Harness limitation found | PRODUCT_PILOT.md Open Tooling Gaps | Acknowledge enforcement gaps explicitly rather than silently relying on agent compliance |
+| Pilot over 140 lines | PRODUCT_PILOT.md | Move operational detail (commit hashes inside milestones, sub-task tracking, full transition tables) to supporting docs |
 
-Always update the date comment (`<!-- Last updated: -->` or `<!-- Last reviewed: -->`) in any file you modify.
+Always update `<!-- Last updated: -->` AND `<!-- Last commit captured: -->` in the Pilot header whenever you edit it. Update `<!-- Last reviewed: -->` in any sister doc you modify, and reflect the new date in the Pilot's Product Docs Index `Last reviewed` column.
 
 ### Expanding Scope
 
@@ -391,14 +400,18 @@ by synthesizing everything from Steps 1-4.
 
 ### Critical rules
 
-- Keep the Pilot under ~110 lines
+- Keep the Pilot under 140 lines (filled). Move overflow to supporting docs.
 - Mark exactly ONE milestone as `← ACTIVE`
 - All phase transition triggers must be data-driven, not calendar-driven
 - No `[PLACEHOLDER: ...]` markers should remain in the final file
-- Completed milestones can be omitted from the Pilot (they remain in ROADMAP.md as completed work)
+- "What's Blocking Ship" must be bulletized — never prose. Each bullet: blocker / unblock condition / owner / since date
+- Phase Transitions table shows ONLY the next transition; full transition history lives in ROADMAP.md
+- Recent Shipped section has a regenerate command pinned in its HTML comment; update the heading date and `Last commit captured` header whenever you regenerate
+- Decision Pending and Open Tooling Gaps are required sections — keep them present even when empty (use placeholder text like "_No pending decisions._" or "_No known gaps._"). Empty sections force tenants to surface gaps; missing sections let gaps stay invisible.
+- Completed milestones can be summarized in Recent Shipped (full detail stays in ROADMAP.md as completed work)
 - The Pilot should be readable in under 2 minutes
 - **Lite scope:** Product Docs Index lists only the 3 generated docs (PRODUCT_OVERVIEW, FEATURE_INVENTORY, ROADMAP)
-- **Micro scope:** Omit the Product Docs Index section entirely
+- **Micro scope:** Omit the Product Docs Index section entirely. Decision Pending, Recent Shipped, and Open Tooling Gaps remain — they are not docs-index-dependent.
 
 ---
 
@@ -418,9 +431,9 @@ Read `references/CLAUDE_MD_REFERENCE.md` for the reference block to add.
 ### What to add
 
 The reference block should:
-- Be marked MANDATORY
+- Frame the Pilot read as the agent's responsibility (not as a harness-enforced rule — there is no enforcement layer; see `TOOLING_GAPS.md`)
 - Tell the agent to read `{PRODUCT_DOCS}PRODUCT_PILOT.md` before starting work
-- Tell the agent to follow the session-end checklist when done
+- Tell the agent to follow the Session End checklist when done
 - Reference PM skills if available
 - Point to `{PRODUCT_DOCS}` for deep context
 
@@ -434,32 +447,52 @@ information. Keeping it in both places creates drift and confusion.
 
 ## Verification Checklist
 
-After completing setup, verify everything:
+After completing setup or any update, run BOTH the manual checklist and the deterministic grep-checks below. Manual review alone has been observed to return all-PASS on Pilots with critical defects (e.g., a gitignored docs directory). The grep-checks are the mandatory final gate.
 
 ### Content quality
 
 - [ ] No `[PLACEHOLDER: ...]` markers remain in any file
-- [ ] Product Pilot has all sections (orientation, milestones, transitions, metrics, instructions, index)
+- [ ] Product Pilot has all required sections (Quick Orientation, Agent Operating Instructions, Active Milestones, Decision Pending, Recent Shipped, Phase Transitions, Metrics Snapshot, Open Tooling Gaps, Product Docs Index, Changelog)
 - [ ] Exactly ONE milestone is marked `← ACTIVE`
-- [ ] All phase transitions have data-driven triggers (no calendar dates)
-- [ ] Metrics have both Target and Current columns
+- [ ] All phase transition triggers are data-driven, not calendar-driven
+- [ ] Metrics have Target, Current, AND Category columns
 - [ ] Agent instruction file has the Product Pilot reference block
 - [ ] No duplicate product context in agent instruction file
 
 ### Cross-references
 
-- [ ] Product Pilot references all 6 supporting docs by correct filename
-- [ ] ROADMAP milestones match Product Pilot milestones
-- [ ] Metrics in Product Pilot snapshot match METRICS_AND_OKRS definitions
+- [ ] Product Pilot references all 6 supporting docs by correct filename (Full scope)
+- [ ] ROADMAP milestones match Product Pilot milestones (no contradictions)
+- [ ] Metrics in Product Pilot snapshot match METRICS_AND_OKRS definitions (target AND current)
 - [ ] FEATURE_INVENTORY categories match codebase reality
+- [ ] `Last reviewed` dates in the Pilot's Product Docs Index match the `<!-- Last reviewed: -->` headers in each sister doc
 
 ### Pilot Health Check
 
-- [ ] PRODUCT_PILOT.md is 110 lines or fewer
-- [ ] "What's blocking" is 1-3 sentences max — operational detail (commit hashes, specific files) belongs in a supporting doc like GA_LAUNCH_PLAN.md
+- [ ] PRODUCT_PILOT.md is 140 lines or fewer (filled tenant Pilots)
+- [ ] "What's Blocking Ship" is bulletized — one bullet per blocker with unblock condition, owner, since date. Prose paragraphs are a structural defect.
 - [ ] No milestone has more than 10 tasks — if so, split into sub-milestones
 - [ ] No `← ACTIVE` milestone has all tasks checked (if all done, advance to next milestone)
-- [ ] The pilot is readable in under 2 minutes — if not, it needs trimming
+- [ ] Recent Shipped section heading date matches the regenerate command's `--since=` value
+- [ ] `Last commit captured` header matches a real commit and is within 10 commits of HEAD
+- [ ] Decision Pending and Open Tooling Gaps sections exist (even if empty with placeholder text)
+
+### Mandatory grep-check gate
+
+Run the deterministic grep-checks defined in `references/AUDIT_PROMPT_PACK.md` (section "Verification grep-checks"). They cover:
+
+1. Product docs directory must NOT be gitignored
+2. No `[PLACEHOLDER:]` markers survive
+3. Exactly one `← ACTIVE` marker
+4. `Last commit captured` references a real commit
+5. All required sections present
+6. Pilot under 140 lines
+
+Two prior verifier agents returning all-PASS does not substitute for these. If the grep-checks pass and a verifier returned all-PASS, run the **Challenge-all-positive gate** from the audit pack — verifier sycophancy is a known failure mode.
+
+### Optional but recommended: 5-angle audit
+
+For a complete review (especially before milestone advancement or phase transition), run all five angles from `references/AUDIT_PROMPT_PACK.md`: drift, coverage, structure, sister-doc consistency, session compliance. Each angle has its own prompt with anti-sycophancy quotas baked in.
 
 ---
 
@@ -476,9 +509,14 @@ These rules apply whenever this skill generates content or reviews product state
 **When generating or updating product docs:**
 - Never invent metric targets — only use values the user provides; mark gaps as `[TODO: add target]`
 - Never fabricate competitor data, pricing, or feature comparisons — mark as `[TODO: research]`
+- Never invent commit hashes for `Last commit captured` or Recent Shipped entries — derive them from `git log` or `git rev-parse`
 - No `[PLACEHOLDER: ...]` marker may survive into final files — replace with real content or convert to `[TODO: ...]`
 - Don't infer completion signals from milestone names — ask if the user hasn't specified one
 - Don't round or approximate numbers: "28% retention" not "~30%"
+
+**When acknowledging gaps:**
+- Open Tooling Gaps must reflect the host harness honestly. If session-start reads are not enforced by a hook, the Pilot must say so. Never describe an unenforced rule as "mandatory."
+- If the host repo's `.gitignore` excludes the product docs directory, flag it as a critical gap — the Pilot is not version-controlled and every claim of audit/tracking is hollow.
 
 ---
 
@@ -493,16 +531,34 @@ These patterns emerged from real-world Product Pilot deployments and produce bet
 
 ---
 
-## Example: Filled-in Product Pilot
+## Example: Filled-in Product Pilot (v2.2 structure, fictional product)
 
-This shows what a completed Product Pilot looks like (fictional product):
+The excerpt below shows the v2.2 sections in use. Section ordering and field formats are normative; the content is illustrative.
 
-> **TaskFlow** is a collaborative task management app for small teams (3-15 people) that
-> emphasizes async work and clear ownership. Users create projects, break work into tasks,
-> assign to team members, and track progress without meetings.
+> ```
+> <!-- Product Pilot format version: 2.2 -->
+> <!-- Pilot scope: Full -->
+> <!-- Last updated: 2026-04-28 -->
+> <!-- Last commit captured: a3f9c12 -->
+> <!-- Owner: Priya R. -->
+> ```
+>
+> ## Quick Orientation
+>
+> **TaskFlow** is a collaborative task management app for small teams (3-15 people) that emphasizes async work and clear ownership.
 >
 > **Current phase:** 1 — Validate
-> **What's blocking:** Trial conversion data → pricing model → Phase 2 launch
+>
+> ### What's Blocking Ship
+>
+> - **Trial conversion below threshold** — Unblocked when: trial-to-paid >15% across 50+ trial starts. Owner: Priya. Since: 2026-04-10
+> - **Pricing model undecided** — Unblocked when: A/B test on trial length completes. Owner: Marcus. Since: 2026-04-15
+>
+> ## Agent Operating Instructions
+>
+> _(see template — used as-is)_
+>
+> ## Active Milestones
 >
 > ### Phase 1: Validate
 >
@@ -511,17 +567,42 @@ This shows what a completed Product Pilot looks like (fictional product):
 >   - [ ] Collect 50+ trial starts and measure conversion
 >   - Completion signal: Trial-to-paid conversion >15%
 >
-> - **[1.4] Retention & Churn Analysis**
->   - [ ] Identify cohort with D30 retention <40%, analyze churn reasons
->   - Completion signal: D30 retention >45% in next cohort
->   - Dependency: [1.3]
+> ## Decision Pending
+>
+> | Decision | Owner | Since | Next step |
+> |----------|-------|-------|-----------|
+> | Annual vs monthly pricing default | Marcus | 2026-04-12 | Decide by 2026-05-15 or kill |
+>
+> ## Recent Shipped (since 2026-04-15)
+>
+> - a3f9c12 Wire trial-length variant flag into onboarding
+> - 882ee0d Add trial-conversion analytics events
+>
+> ## Phase Transitions
 >
 > | Transition | Trigger |
 > |-----------|---------|
 > | Phase 1 → 2 | D7 retention >30% AND trial-to-paid >15% |
 >
-> | Metric | Target | Current |
-> |--------|--------|---------|
-> | D7 retention | >30% | 28% |
-> | Trial-to-paid conversion | >15% | 12% |
-> | Task completion rate | >2.5/user/day | 1.8 |
+> ## Metrics Snapshot
+>
+> | Metric | Category | Target | Current |
+> |--------|----------|--------|---------|
+> | D7 retention | Retention | >30% | 28% |
+> | Trial-to-paid conversion | Revenue | >15% | 12% |
+> | Task completion rate | Engagement | >2.5/user/day | 1.8 |
+>
+> ## Open Tooling Gaps
+>
+> - No pre-commit hook enforces session-end doc updates; this Pilot relies on agent compliance.
+>
+> ## Product Docs Index
+>
+> | File | What's in it | Review cadence | Last reviewed |
+> |------|-------------|----------------|---------------|
+> | `ROADMAP.md` | Phased roadmap | Monthly | 2026-04-20 |
+> | `METRICS_AND_OKRS.md` | Metric definitions | Weekly | 2026-04-26 |
+>
+> ## Changelog
+>
+> - 2026-04-28 — Bumped to format version 2.2; added Decision Pending, Recent Shipped, Open Tooling Gaps
