@@ -4,30 +4,40 @@
 
 **Give your AI coding agent product awareness.**
 
-Product Pilot is a [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skill that bootstraps self-maintaining product documentation for any project. It creates a lightweight Product Pilot file that tells your AI agent what phase you're in, what milestone is active, what metrics matter, and what docs to update when work is done. No more repeating product context every session.
+Product Pilot is an AI coding-agent skill, tested with Claude Code and Codex, that bootstraps self-maintaining product documentation for any project. It creates a lightweight Product Pilot file that tells your agent what phase you're in, what milestone is active, what metrics matter, and what docs to update when work is done. No more repeating product context every session.
 
 ## Install
 
-Copy the skill into your Claude Code skills directory:
+Copy or clone the skill into your agent's skills directory.
+
+For Claude Code:
 
 ```bash
 cp -r product-pilot ~/.claude/skills/product-pilot
 ```
 
-Or clone this repo directly:
-
 ```bash
 git clone https://github.com/shanemhamilton/product-pilot.git ~/.claude/skills/product-pilot
 ```
 
+For Codex:
+
+```bash
+cp -r product-pilot ~/.codex/skills/product-pilot
+```
+
+```bash
+git clone https://github.com/shanemhamilton/product-pilot.git ~/.codex/skills/product-pilot
+```
+
 ## Usage
 
-In Claude Code, say any of:
+In your AI coding agent, say any of:
 
 - "Set up a product pilot"
 - "Create product context for my project"
 - "Make my agent product-aware"
-- `/product-pilot`
+- "Read the product pilot"
 
 The skill runs a short interview about your product, then generates a product docs directory with your Product Pilot and supporting markdown files. All generated files are markdown — optimized for AI agents to read and maintain.
 
@@ -54,17 +64,19 @@ The skill auto-detects your project's existing docs directory (`docs/`, `documen
   COMPETITIVE_LANDSCAPE.md   # Competitors, differentiators, positioning
 ```
 
-## Teams Mode
+## Parallel Agent Mode
 
-If you have Claude Code agent teams enabled, the skill automatically parallelizes document generation across teammates. This cuts generation time significantly for Full scope. No configuration needed.
+If your host supports parallel agents and the user has enabled or approved delegation, the skill can parallelize Full-scope document generation across separate workers. Lite and Micro scopes rarely justify the overhead.
 
 ## Update Mode
 
 If a Product Pilot already exists, the skill switches to update mode: it asks what changed and updates only the relevant files. Run periodically to keep docs current.
 
-## Recommended CLAUDE.md Setup
+## Recommended Agent Instruction Setup
 
 The skill adds a **Product Pilot reference block** to your agent instruction file automatically during setup. That block tells your agent to read the Pilot at session start and follow the session-end checklist.
+
+Supported instruction files include `CLAUDE.md` for Claude Code, `AGENTS.md` for Codex and GitHub Copilot, `.cursorrules` for Cursor, and custom system prompts for other tools.
 
 For better results, add these rules manually to the same instruction file. They address the two most common failure modes in AI-assisted product work — sycophantic status reviews and fabricated data in docs.
 
@@ -93,6 +105,17 @@ When generating or updating product docs:
 ```
 
 These rules are intentionally omitted from the skill itself — they may conflict with your project's existing agent instruction style. Add the ones that fit.
+
+## What's new in v2.3
+
+v2.3 expands Product Pilot from a Claude Code-oriented skill into a multi-agent skill tested with Claude Code and Codex. The core Product Pilot format remains v2.2.
+
+**Compatibility changes:**
+
+- Added Codex install instructions for `~/.codex/skills/product-pilot`.
+- Added `agents/openai.yaml` metadata for Codex skill discovery and UI display.
+- Replaced the Claude-specific instruction reference with `references/AGENT_INSTRUCTION_REFERENCE.md`, covering `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, and custom system prompts.
+- Reframed Teams Mode as optional Parallel Agent Mode, gated on host support and user approval.
 
 ## What's new in v2.2
 
