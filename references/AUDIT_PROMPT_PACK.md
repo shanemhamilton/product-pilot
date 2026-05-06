@@ -116,8 +116,8 @@ These rules apply to every angle below. Any angle that violates them is a failed
 > 1. Check whether the host harness has a SessionStart hook that reads PRODUCT_PILOT.md. If the agent instruction file (CLAUDE.md, AGENTS.md, .cursorrules) says the agent MUST read the Pilot, but no hook enforces it, that is a compliance defect (doc-only enforcement masquerading as a rule).
 > 2. Check whether session-end doc updates are enforced. Search for a pre-commit hook, CI step, or other check that fails when code changes ship without corresponding Pilot/sister-doc updates. If none exists but the Pilot's Session End checklist reads as a rule, that is a compliance defect.
 > 3. Check whether `.gitignore` excludes the product docs directory. If `docs/`, `documentation/`, or the Pilot's parent directory is gitignored, the Pilot is not version-controlled — every claim of "tracked" or "audited" is a compliance defect.
-> 4. Run the agent's own self-report. If you can find telemetry, transcripts, or logs (Langfuse, Claude Code session history, etc.), count actual skill invocations vs claimed cadence. A skill that claims session-start firing but invoked zero times in the recent window is a critical compliance defect.
-> 5. Check whether the agent instruction file actually contains the Product Pilot reference block from `references/CLAUDE_MD_REFERENCE.md`. Missing block is a compliance defect.
+> 4. Run the agent's own self-report. If you can find telemetry, transcripts, or host session history, count actual skill invocations vs claimed cadence. A skill that claims session-start firing but invoked zero times in the recent window is a critical compliance defect.
+> 5. Check whether the agent instruction file actually contains the Product Pilot reference block from `references/AGENT_INSTRUCTION_REFERENCE.md`. Missing block is a compliance defect.
 >
 > Banned softening words: enforced, mandatory, ensured. These words must be backed by a hook, check, or test, or they are sycophancy. Lead with the worst gap between claim and enforcement.
 

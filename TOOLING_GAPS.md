@@ -10,16 +10,16 @@ The v2.2 template now has an `Open Tooling Gaps` section so tenants flag these l
 
 ## Gap 1 — No SessionStart hook contract
 
-**What the skill claims:** The `description` field in `SKILL.md` lists "Session start" as a primary trigger. The agent instruction reference block in `references/CLAUDE_MD_REFERENCE.md` tells the host agent to "read PRODUCT_PILOT.md before starting work."
+**What the skill claims:** The `description` field in `SKILL.md` lists "Session start" as a primary trigger. The agent instruction reference block in `references/AGENT_INSTRUCTION_REFERENCE.md` tells the host agent to "read PRODUCT_PILOT.md before starting work."
 
-**What actually happens:** The skill fires only when the agent voluntarily invokes it, or when the user types `/product-pilot`. Most Claude Code session starts do not invoke any skill automatically.
+**What actually happens:** The skill fires only when the agent voluntarily invokes it, or when the user explicitly asks for Product Pilot context. Most agent session starts do not invoke any skill automatically.
 
 **Evidence:** In one production deployment, Langfuse traces over a 7-day window recorded zero invocations of the `product-pilot` skill at session start, despite the agent instruction file mandating the read.
 
 **What's needed to close this gap:** A SessionStart hook contract. Roughly:
 
 ```jsonc
-// Conceptual — Claude Code would need to support this.
+// Conceptual — the host harness would need to support this.
 {
   "hooks": {
     "SessionStart": [
@@ -55,7 +55,7 @@ Until the harness exposes a SessionStart hook that can invoke a skill (not just 
 2. Cross-references against changes to `{PRODUCT_DOCS}/`.
 3. Warns (not blocks) if code changes ship without doc changes.
 
-The template's v2.2 `Open Tooling Gaps` section gives tenants a place to acknowledge this limitation in their own Pilot. The CLAUDE_MD_REFERENCE.md block has been softened in v2.2 to frame the session-end checklist as the agent's responsibility, not as an enforced rule.
+The template's v2.2 `Open Tooling Gaps` section gives tenants a place to acknowledge this limitation in their own Pilot. The AGENT_INSTRUCTION_REFERENCE.md block frames the session-end checklist as the agent's responsibility, not as an enforced rule.
 
 ---
 

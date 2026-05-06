@@ -1,4 +1,3 @@
-<!-- Source: https://github.com/shanemhamilton/product-pilot -->
 ---
 name: product-pilot
 description: >
@@ -11,10 +10,12 @@ description: >
   (3) Update — when a milestone completes or phase shifts ("update the pilot", "milestone done",
   "we moved to the next phase", "log what we shipped"). When in doubt, trigger this skill — it
   detects the right mode automatically based on what exists in the project.
-version: "2.2"
 ---
 
 # Product Pilot — Setup Skill
+
+<!-- Source: https://github.com/shanemhamilton/product-pilot -->
+<!-- Product Pilot package version: 2.3 -->
 
 This skill creates and maintains a Product Pilot — a standalone file that gives AI coding agents product awareness: what phase you're in, what milestone is active, what's blocking ship, what metrics matter, what just shipped, what decisions are pending, and what docs to update when done.
 
@@ -166,8 +167,8 @@ Once resolved, use this path as `{PRODUCT_DOCS}` for the rest of the setup. Tell
 
 ```
 - Does `{PRODUCT_DOCS}` exist? If yes, check what's already there.
-- Does an agent instruction file exist? Look for: CLAUDE.md, .cursorrules, .cursor/rules,
-  AGENTS.md, or a system prompt file.
+- Does an agent instruction file exist? Look for: CLAUDE.md, AGENTS.md, .cursorrules,
+  .cursor/rules, or a system prompt file.
 - Does a README exist? It often contains product context to extract.
 - Is there a git history? Recent commits reveal what the team is working on.
 - Are there existing product docs (PRDs, roadmaps, OKRs) anywhere in the repo?
@@ -349,14 +350,14 @@ Create `{PRODUCT_DOCS}` if it doesn't exist. Read each template only when genera
 | `USER_RESEARCH.md` | `templates/USER_RESEARCH_TEMPLATE.md` | Q2 | ~80-150 lines |
 | `ROADMAP.md` | `templates/ROADMAP_TEMPLATE.md` | Q3, Q4, Q8, Q9, Q10 | ~80-200 lines |
 
-### Teams mode (optional — Full scope only)
+### Parallel agent mode (optional — Full scope only)
 
-If agent teams are enabled, spawn 3 teammates in parallel instead of generating docs sequentially. Create `{PRODUCT_DOCS}` first, then spawn:
+If the host supports parallel agents and the user has enabled or approved delegation, spawn 3 workers in parallel instead of generating docs sequentially. Create `{PRODUCT_DOCS}` first, then spawn:
 - **Product Strategist**: PRODUCT_OVERVIEW + COMPETITIVE_LANDSCAPE (Q1, Q2, Q5, Q11, Q12)
 - **Roadmap Engineer**: ROADMAP + METRICS_AND_OKRS (Q3, Q4, Q6-Q10)
 - **User Researcher**: USER_RESEARCH + FEATURE_INVENTORY (Q2 + code audit)
 
-Each teammate prompt must include: full interview answers, template paths, target file paths, target lengths, and the placeholder rule. Lite scope (3 docs) rarely justifies team overhead — generate sequentially. After all teammates complete, lead proceeds to Step 5.
+Each worker prompt must include: full interview answers, template paths, target file paths, target lengths, and the placeholder rule. Lite scope (3 docs) rarely justifies delegation overhead — generate sequentially. After all workers complete, the lead proceeds to Step 5.
 
 ### Feature inventory from codebase
 
@@ -417,15 +418,15 @@ by synthesizing everything from Steps 1-4.
 
 ## Step 6: Update the Agent Instruction File
 
-Read `references/CLAUDE_MD_REFERENCE.md` for the reference block to add.
+Read `references/AGENT_INSTRUCTION_REFERENCE.md` for the reference block to add.
 
 ### Where to add it
 
 | File | Placement |
 |------|-----------|
 | `CLAUDE.md` | After user preferences, before engineering instructions |
+| `AGENTS.md` | In the main project instructions section |
 | `.cursorrules` | Near the top, after project description |
-| `AGENTS.md` | In the main instructions section |
 | System prompt | At the beginning of project-specific instructions |
 
 ### What to add

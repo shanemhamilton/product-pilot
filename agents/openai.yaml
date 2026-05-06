@@ -1,0 +1,4 @@
+interface:
+  display_name: "Product Pilot"
+  short_description: "Maintain product roadmap context"
+  default_prompt: "Use $product-pilot to load, create, or update product context for this project."

@@ -15,7 +15,7 @@ All PRs require review before merge.
 ## Guidelines
 
 - **Keep templates concise.** Each template has a target line count listed in SKILL.md. Stay within it.
-- **Test on a real project.** Copy your modified skill to `~/.claude/skills/product-pilot/` and run it. Verify the generated docs are correct and complete.
+- **Test on a real project.** Copy your modified skill to `~/.claude/skills/product-pilot/` and `~/.codex/skills/product-pilot/` when practical, then run it in the affected host. Verify the generated docs are correct and complete.
 - **No breaking changes to PRODUCT_PILOT_TEMPLATE.md without a version bump.** Users depend on the Pilot's structure. If you change section names, ordering, or remove sections, bump the version in SKILL.md.
 - **Preserve placeholder conventions.** Templates use `[PLACEHOLDER: ...]` for required fields and `[TODO: ...]` for optional fields. Don't change this convention.
 - **Keep the skill generic.** No project-specific content, no hardcoded product names, no assumptions about tech stack.
