@@ -4,6 +4,8 @@
 
 **Give your AI coding agent product awareness.**
 
+**[→ View the site](https://shanemhamilton.github.io/product-pilot/)**
+
 Product Pilot is an AI coding-agent skill, tested with Claude Code and Codex, that bootstraps self-maintaining product documentation for any project. It creates a lightweight Product Pilot file that tells your agent what phase you're in, what milestone is active, what metrics matter, and what docs to update when work is done. No more repeating product context every session.
 
 ## Install
@@ -42,6 +44,19 @@ In your AI coding agent, say any of:
 The skill runs a short interview about your product, then generates a product docs directory with your Product Pilot and supporting markdown files. All generated files are markdown — optimized for AI agents to read and maintain.
 
 The skill auto-detects your project's existing docs directory (`docs/`, `documentation/`, `doc/`, etc.) and creates a `product/` subdirectory inside it. If no docs directory exists, it defaults to `docs/product/`.
+
+## Working With Product Design
+
+Product Pilot pairs well with the Product Design plugin because they own different jobs:
+
+- Product Pilot is the product brief: current phase, active milestone, blockers, target users, metrics, product principles, and docs.
+- Product Design is the design workflow: research, audits, visual ideation, prototypes, redesigns, clones, design QA, and sharing.
+
+When Product Design is installed, route design-related work through `product-design:index` and pass Product Pilot facts into the Product Design brief. Treat `product-design:index` as a router, not the whole workflow. Run Product Design user-context preflight when available, then use the focused Product Design skill for the request.
+
+For new UI, prototype, redesign, or build requests without a URL, screenshot, Figma frame, mockup, source image, or existing code target, do not scaffold or edit files from prose alone. Confirm the brief, generate exactly three visual directions, and wait for the user to choose one before implementation.
+
+See [`references/PRODUCT_DESIGN_INTEGRATION.md`](references/PRODUCT_DESIGN_INTEGRATION.md) for the full handoff contract.
 
 ## Scope Options
 
