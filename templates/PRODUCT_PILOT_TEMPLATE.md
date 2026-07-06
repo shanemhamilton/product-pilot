@@ -1,6 +1,6 @@
 # Product Pilot
 
-<!-- MANDATORY: Read this file at the start of every session. -->
+<!-- Product Pilot context file. Session-start reads depend on host instructions or hooks; see Open Tooling Gaps. -->
 <!-- Product Pilot format version: 2.2 -->
 <!-- Pilot scope: [PLACEHOLDER: SCOPE — Full | Lite | Micro] -->
 <!-- Last updated: [PLACEHOLDER: DATE] -->
@@ -13,7 +13,7 @@
 [PLACEHOLDER: PRODUCT_DESCRIPTION — 2-3 sentences describing what the product does and who it's for]
 
 **Current phase:** [PLACEHOLDER: PHASE_NUMBER] — [PLACEHOLDER: PHASE_NAME]
-**Deep context:** See the supporting docs indexed at the bottom of this file.
+**Deep context:** Full/Lite scopes list supporting docs in the Product Docs Index. Micro scope uses this Pilot only.
 
 ### What's Blocking Ship
 
@@ -36,10 +36,10 @@
 1. Read this Pilot file end-to-end before starting work
 2. Verify the `Last commit captured` header against `git rev-parse --short HEAD`. If they differ by more than ~10 commits, run the Recent Shipped regenerate command before continuing — the Pilot is behind reality
 3. Identify the `← ACTIVE` milestone
-4. If your work relates to a product doc (see Product Docs Index), load the relevant PM skill if installed
+4. If this Pilot includes a Product Docs Index and your work relates to a product doc, load the relevant PM skill if installed
 5. If the `← ACTIVE` milestone has all tasks checked off, prompt: "Milestone [X] appears complete. Should we advance `← ACTIVE` to the next milestone?"
 6. If `Last updated` is more than 30 days ago, prompt for a Pilot review before starting new work
-7. In the Product Docs Index, scan the `Last reviewed` column — flag any doc more than 30 days stale: "[DOC] hasn't been reviewed in over 30 days. Consider updating it this session or scheduling a review."
+7. If this Pilot includes a Product Docs Index, scan the `Last reviewed` column — flag any doc more than 30 days stale: "[DOC] hasn't been reviewed in over 30 days. Consider updating it this session or scheduling a review."
 8. If your current task doesn't align with the `← ACTIVE` milestone, proceed with your task but note the divergence. At session end, consider whether this Pilot needs updating to reflect the actual workstream
 
 **Context depth by task type:**
@@ -158,7 +158,7 @@ When you edit this Pilot, also update `Last updated` and `Last commit captured` 
 
 <!-- Lite scope: list only the 3 generated docs (PRODUCT_OVERVIEW, FEATURE_INVENTORY, ROADMAP). -->
 <!-- Micro scope: omit this entire section. -->
-<!-- The "Last reviewed" column reads each doc's <!-- Last reviewed: --> header comment. Review
+<!-- The "Last reviewed" column reads each doc's Last reviewed header comment. Review
      cadence without per-doc timestamps is meaningless — both columns are required. -->
 
 | File | What's in it | Review cadence | Last reviewed |

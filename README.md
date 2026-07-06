@@ -15,7 +15,8 @@ Copy or clone the skill into your agent's skills directory.
 For Claude Code:
 
 ```bash
-cp -r product-pilot ~/.claude/skills/product-pilot
+mkdir -p ~/.claude/skills/product-pilot
+rsync -a --checksum --exclude .git ./ ~/.claude/skills/product-pilot/
 ```
 
 ```bash
@@ -25,7 +26,8 @@ git clone https://github.com/shanemhamilton/product-pilot.git ~/.claude/skills/p
 For Codex:
 
 ```bash
-cp -r product-pilot ~/.codex/skills/product-pilot
+mkdir -p ~/.codex/skills/product-pilot
+rsync -a --checksum --exclude .git ./ ~/.codex/skills/product-pilot/
 ```
 
 ```bash

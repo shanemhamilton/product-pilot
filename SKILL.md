@@ -61,7 +61,7 @@ Report (under 150 words):
 2. If `<!-- Last updated: -->` is more than 30 days old → flag: "The Pilot is X days stale — consider a review after this session."
 3. If every task in `← ACTIVE` is checked `[x]` → prompt: "Milestone [X] looks complete. Should we advance `← ACTIVE` to the next milestone?"
 4. If PRODUCT_PILOT.md is over 140 lines → note: "The Pilot has grown past 140 lines — operational detail may need moving to a supporting doc."
-5. If the Product Docs Index has any `Last reviewed` date more than 30 days old → flag: "[DOC] hasn't been reviewed in over 30 days. Consider updating it this session or scheduling a review."
+5. If the Pilot includes a Product Docs Index and any `Last reviewed` date is more than 30 days old → flag: "[DOC] hasn't been reviewed in over 30 days. Consider updating it this session or scheduling a review."
 
 ### Step 4: Connect to current task
 If the user's task aligns with the active milestone, say so. If it diverges, note the divergence briefly and offer to log it at session end via Update mode.
@@ -182,9 +182,9 @@ Once resolved, use this path as `{PRODUCT_DOCS}` for the rest of the setup. Tell
 | README + code, no product docs | Audit-first: extract context from README and code, then fill gaps via interview |
 | Some product docs exist | Gap analysis: check which of the 6 supporting docs exist, create missing ones, build Product Pilot on top |
 | Full product docs, no Product Pilot | Pilot-only: synthesize existing docs into a PRODUCT_PILOT.md + add agent instruction reference |
-| User doesn't know metrics | Use phase-based suggestions from Q6 table; approximate targets are better than none |
+| User doesn't know metrics | Use phase-based suggestions from Q6 table for metric names only; mark unknown targets as `[TODO: add target]` |
 | Multiple active workstreams | Pick ONE as the active milestone; consider if they should be sequential milestones |
-| All metrics are "pre-launch" | Set targets now; the agent fills in actual values post-launch |
+| All metrics are "pre-launch" | Ask for targets; if the user does not provide them, mark targets as `[TODO: add target]` and let the agent fill actual values post-launch |
 | CLAUDE.md has embedded product info | Move it into the Pilot and supporting docs; the reference block replaces it |
 | Not ready for all 6 supporting docs | Start with at least 3: PRODUCT_OVERVIEW, FEATURE_INVENTORY, ROADMAP; update the Pilot index accordingly |
 
@@ -397,7 +397,7 @@ by synthesizing everything from Steps 1-4.
 | Phase Transitions | Q10 (data-driven triggers) |
 | Metrics Snapshot | Q6 + Q7 (top 5 metrics with targets) |
 | Agent Operating Instructions | Use template as-is |
-| Product Docs Index | Use template as-is |
+| Product Docs Index | Use template as-is for Full/Lite; omit in Micro |
 
 ### Critical rules
 
@@ -453,7 +453,7 @@ After completing setup or any update, run BOTH the manual checklist and the dete
 ### Content quality
 
 - [ ] No `[PLACEHOLDER: ...]` markers remain in any file
-- [ ] Product Pilot has all required sections (Quick Orientation, Agent Operating Instructions, Active Milestones, Decision Pending, Recent Shipped, Phase Transitions, Metrics Snapshot, Open Tooling Gaps, Product Docs Index, Changelog)
+- [ ] Product Pilot has all required sections for the selected scope (Quick Orientation, Agent Operating Instructions, Active Milestones, Decision Pending, Recent Shipped, Phase Transitions, Metrics Snapshot, Open Tooling Gaps, Changelog; Product Docs Index is required for Full/Lite and omitted for Micro)
 - [ ] Exactly ONE milestone is marked `← ACTIVE`
 - [ ] All phase transition triggers are data-driven, not calendar-driven
 - [ ] Metrics have Target, Current, AND Category columns
@@ -486,7 +486,7 @@ Run the deterministic grep-checks defined in `references/AUDIT_PROMPT_PACK.md` (
 2. No `[PLACEHOLDER:]` markers survive
 3. Exactly one `← ACTIVE` marker
 4. `Last commit captured` references a real commit
-5. All required sections present
+5. All required sections present for the selected scope
 6. Pilot under 140 lines
 
 Two prior verifier agents returning all-PASS does not substitute for these. If the grep-checks pass and a verifier returned all-PASS, run the **Challenge-all-positive gate** from the audit pack — verifier sycophancy is a known failure mode.

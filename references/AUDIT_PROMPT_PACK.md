@@ -22,10 +22,10 @@ The pack assumes the auditing agent has read access to the Pilot, the supporting
 These rules apply to every angle below. Any angle that violates them is a failed audit, regardless of findings.
 
 - **Lead with the worst defect.** No "overall the Pilot is solid" openers. No closing encouragement.
-- **Quotas:** ≥5 defects required for a full Pilot audit. ≥3 defects for a single-angle review. Soft audits produce false confidence.
+- **Defect search target:** Hunt hard for at least 5 defects in a full Pilot audit and at least 3 in a single-angle review, but do not fabricate findings. If fewer real defects survive verification, report the verified count and list the checks that found no issue.
 - **Banned softening words:** good, great, solid, clean, comprehensive, thorough, well-structured, excellent, impressive, nice, effective, polished. Also banned: "overall", "for the most part", "broadly speaking", "looks right".
 - **Specificity required.** Unacceptable: "the metrics section is unclear." Acceptable: "Metrics Snapshot lists D7 retention with target 30% but METRICS_AND_OKRS.md lists 25% — Pilot disagrees with its own source of truth."
-- **No FAIL softened to CONDITIONAL PASS.** If quotas or specificity standards are not met, issue FAIL.
+- **No FAIL softened to CONDITIONAL PASS.** If specificity standards are not met, issue FAIL.
 
 ---
 
@@ -35,7 +35,7 @@ These rules apply to every angle below. Any angle that violates them is a failed
 
 **Prompt:**
 
-> You are auditing PRODUCT_PILOT.md for drift between what the Pilot claims and what is true in the codebase right now. Run the checks below and report ≥3 drift defects. Lead with the worst.
+> You are auditing PRODUCT_PILOT.md for drift between what the Pilot claims and what is true in the codebase right now. Run the checks below and hunt for at least 3 drift defects. Lead with the worst verified defect; if fewer than 3 survive verification, report the verified count and the no-issue checks.
 >
 > 1. Compare `Last commit captured` in the Pilot header to `git rev-parse --short HEAD`. If they diverge by more than 10 commits, the Pilot is structurally stale; report it as a critical drift defect.
 > 2. Run `git log --oneline --since=<Last updated date>` and compare commit messages to the Pilot's Recent Shipped section. Any commit group not represented is a drift defect.
@@ -54,7 +54,7 @@ These rules apply to every angle below. Any angle that violates them is a failed
 
 **Prompt:**
 
-> You are auditing PRODUCT_PILOT.md for coverage gaps — material work, decisions, or risks that exist in the project but do not appear in the Pilot. Report ≥3 coverage defects. Lead with the worst.
+> You are auditing PRODUCT_PILOT.md for coverage gaps — material work, decisions, or risks that exist in the project but do not appear in the Pilot. Hunt for at least 3 coverage defects. Lead with the worst verified gap; if fewer than 3 survive verification, report the verified count and the no-issue checks.
 >
 > 1. Run `git log --oneline --since=<Recent Shipped heading date>` and identify any commit group representing a feature, infrastructure change, or major refactor that does NOT appear in Recent Shipped. Each is a coverage defect.
 > 2. Search the project for `TODO`, `FIXME`, and recently-modified design or planning docs. Any major in-flight workstream not represented in Active Milestones is a coverage defect.
@@ -72,14 +72,14 @@ These rules apply to every angle below. Any angle that violates them is a failed
 
 **Prompt:**
 
-> You are auditing PRODUCT_PILOT.md for structural defects that reduce its usability for an AI agent reading top-down. Report ≥3 structural defects. Lead with the worst.
+> You are auditing PRODUCT_PILOT.md for structural defects that reduce its usability for an AI agent reading top-down. Hunt for at least 3 structural defects. Lead with the worst verified defect; if fewer than 3 survive verification, report the verified count and the no-issue checks.
 >
-> 1. Verify the section order: header comments → Quick Orientation (with bulletized "What's Blocking Ship") → Agent Operating Instructions → Active Milestones → Decision Pending → Recent Shipped → Phase Transitions → Metrics Snapshot → Open Tooling Gaps → Product Docs Index → Changelog. Any section out of order is a structural defect, especially Agent Operating Instructions appearing AFTER milestone history.
+> 1. Verify the section order: header comments → Quick Orientation (with bulletized "What's Blocking Ship") → Agent Operating Instructions → Active Milestones → Decision Pending → Recent Shipped → Phase Transitions → Metrics Snapshot → Open Tooling Gaps → Product Docs Index (Full/Lite only) → Changelog. Any section out of order is a structural defect, especially Agent Operating Instructions appearing AFTER milestone history.
 > 2. Verify "What's Blocking Ship" is bulletized (one bullet per blocker, with unblock condition / owner / since date). Any prose paragraph in this section is a structural defect.
 > 3. Verify the Pilot is under 140 lines when filled. Over 140 lines means operational detail belongs in supporting docs.
 > 4. Verify exactly ONE milestone has the `← ACTIVE` marker. Zero or multiple is a structural defect.
 > 5. Verify Phase Transitions shows ONLY the next transition, not full transition history. Full tables belong in ROADMAP.md.
-> 6. Verify the Product Docs Index has both Review cadence AND Last reviewed columns. Cadence without per-doc timestamps is non-actionable.
+> 6. For Full/Lite scope, verify the Product Docs Index has both Review cadence AND Last reviewed columns. For Micro scope, verify the Product Docs Index is omitted. Cadence without per-doc timestamps is non-actionable.
 > 7. Verify Decision Pending and Open Tooling Gaps sections exist (even if empty with placeholder text). Their absence is a structural defect — empty sections force tenants to surface gaps; missing sections let gaps stay invisible.
 >
 > Banned softening words: good, well-structured, clean, intuitive, readable. Do NOT close with "with these fixes the structure will be solid".
@@ -92,7 +92,7 @@ These rules apply to every angle below. Any angle that violates them is a failed
 
 **Prompt:**
 
-> You are auditing PRODUCT_PILOT.md against its sister docs (PRODUCT_OVERVIEW.md, FEATURE_INVENTORY.md, ROADMAP.md, METRICS_AND_OKRS.md, USER_RESEARCH.md, COMPETITIVE_LANDSCAPE.md — whichever exist). Report ≥3 consistency defects. Lead with the worst.
+> You are auditing PRODUCT_PILOT.md against its sister docs (PRODUCT_OVERVIEW.md, FEATURE_INVENTORY.md, ROADMAP.md, METRICS_AND_OKRS.md, USER_RESEARCH.md, COMPETITIVE_LANDSCAPE.md — whichever exist). Hunt for at least 3 consistency defects. Lead with the worst verified defect; if fewer than 3 survive verification, report the verified count and the no-issue checks.
 >
 > 1. Cross-check every milestone in the Pilot's Active Milestones against ROADMAP.md. Any milestone present in one and absent in the other, or with different completion signals or dependencies, is a consistency defect.
 > 2. Cross-check every metric in Metrics Snapshot against METRICS_AND_OKRS.md. Any mismatch in target, current value, or definition is a consistency defect.
@@ -111,7 +111,7 @@ These rules apply to every angle below. Any angle that violates them is a failed
 
 **Prompt:**
 
-> You are auditing whether the Product Pilot system in this project actually enforces what it claims to enforce. Report ≥3 compliance defects. Lead with the worst.
+> You are auditing whether the Product Pilot system in this project actually enforces what it claims to enforce. Hunt for at least 3 compliance defects. Lead with the worst verified defect; if fewer than 3 survive verification, report the verified count and the no-issue checks.
 >
 > 1. Check whether the host harness has a SessionStart hook that reads PRODUCT_PILOT.md. If the agent instruction file (CLAUDE.md, AGENTS.md, .cursorrules) says the agent MUST read the Pilot, but no hook enforces it, that is a compliance defect (doc-only enforcement masquerading as a rule).
 > 2. Check whether session-end doc updates are enforced. Search for a pre-commit hook, CI step, or other check that fails when code changes ship without corresponding Pilot/sister-doc updates. If none exists but the Pilot's Session End checklist reads as a rule, that is a compliance defect.
@@ -134,6 +134,8 @@ These are deterministic shell checks that catch invariant violations regardless 
 
 # 1. Product docs directory must NOT be gitignored. (Replace docs/product/ with the actual path.)
 PRODUCT_DOCS="docs/product/"
+PILOT_SCOPE=$(grep -oE "Pilot scope: [A-Za-z]+" "$PRODUCT_DOCS/PRODUCT_PILOT.md" | awk '{print $3}')
+PILOT_SCOPE=${PILOT_SCOPE:-Full}
 git check-ignore -q "$PRODUCT_DOCS" && echo "FAIL: product docs directory is gitignored — Pilot will never be version-controlled"
 
 # 2. No [PLACEHOLDER:] markers may survive in any product doc.
@@ -150,9 +152,14 @@ LAST_HASH=$(grep -oE "Last commit captured: [a-f0-9]+" "$PRODUCT_DOCS/PRODUCT_PI
 git cat-file -e "$LAST_HASH" 2>/dev/null || echo "FAIL: Last commit captured header references unknown commit $LAST_HASH"
 
 # 5. Required sections must all be present.
-for SECTION in "## Quick Orientation" "## Agent Operating Instructions" "## Active Milestones" "## Decision Pending" "## Recent Shipped" "## Phase Transitions" "## Metrics Snapshot" "## Open Tooling Gaps" "## Product Docs Index" "## Changelog"; do
+for SECTION in "## Quick Orientation" "## Agent Operating Instructions" "## Active Milestones" "## Decision Pending" "## Recent Shipped" "## Phase Transitions" "## Metrics Snapshot" "## Open Tooling Gaps" "## Changelog"; do
   grep -qF "$SECTION" "$PRODUCT_DOCS/PRODUCT_PILOT.md" || echo "FAIL: missing section: $SECTION"
 done
+if [ "$PILOT_SCOPE" != "Micro" ]; then
+  grep -qF "## Product Docs Index" "$PRODUCT_DOCS/PRODUCT_PILOT.md" || echo "FAIL: missing section: ## Product Docs Index"
+else
+  grep -qF "## Product Docs Index" "$PRODUCT_DOCS/PRODUCT_PILOT.md" && echo "FAIL: Micro Pilot should omit Product Docs Index"
+fi
 
 # 6. Pilot under 140 lines (filled tenant Pilots; loosen for unfilled template).
 LINES=$(wc -l < "$PRODUCT_DOCS/PRODUCT_PILOT.md")

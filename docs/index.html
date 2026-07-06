@@ -341,7 +341,7 @@
     <div class="section-head center reveal">
       <div class="eyebrow">The problem it solves</div>
       <h2>Your agent forgets your product every session</h2>
-      <p>Without persistent context, every session starts with you re-explaining phase, roadmap, metrics, and blockers. Product Pilot writes it down once — in a file your agent reads on its own.</p>
+      <p>Without persistent context, every session starts with you re-explaining phase, roadmap, metrics, and blockers. Product Pilot writes it down once — in a file your agent can read when instructed or wired into your host workflow.</p>
     </div>
     <div class="ba-grid">
       <div class="ba-card before reveal">
@@ -396,7 +396,7 @@
           <div class="line"><span class="pfx">pilot ›</span><span class="txt">Quick interview — <span class="hl">12 questions</span> for Full scope.<br/><span class="dim">What does this product do? Who's it for? Current phase? Active milestone? Key metrics &amp; targets?…</span></span></div>
           <div class="line"><span class="pfx ok">done ›</span><span class="txt">Generated <span class="hl">docs/product/</span> — Pilot + 6 supporting docs.</span></div>
           <div class="line"><span class="pfx ok">done ›</span><span class="txt">Added a Product Pilot reference block to <span class="hl">CLAUDE.md</span> / <span class="hl">AGENTS.md</span>.</span></div>
-          <div class="mode-caption"><b>Setup</b> — a short interview becomes a full product documentation system, plus the instruction block that tells your agent to read it at session start. ~5–20 min depending on scope.</div>
+          <div class="mode-caption"><b>Setup</b> — a short interview becomes a full product documentation system, plus the instruction block that makes the session-start read the agent's responsibility. ~5–20 min depending on scope.</div>
         </div>
 
         <!-- CONTEXT -->
@@ -406,7 +406,7 @@
           <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Phase:</b> Validate &nbsp;·&nbsp; <b style="color:var(--cyan)">Milestone:</b> Trial conversion optimization <span class="hl">← ACTIVE</span></span></div>
           <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Blocking ship:</b> D7 retention <span class="hl">28% vs 30%</span> target</span></div>
           <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Recent shipped:</b> onboarding rewrite, paywall A/B</span></div>
-          <div class="mode-caption"><b>Context</b> — at session start the agent reads the Pilot and produces a tight orientation: current phase, active milestone, what's blocking ship, what shipped recently, and which metrics are at risk.</div>
+          <div class="mode-caption"><b>Context</b> — when asked to start from Product Pilot context, the agent reads the Pilot and produces a tight orientation: current phase, active milestone, what's blocking ship, what shipped recently, and which metrics are at risk.</div>
         </div>
 
         <!-- UPDATE -->
@@ -434,7 +434,7 @@
     </div>
     <div class="tree-card reveal">
       <div class="tree-head">{your-docs-dir}/product/</div>
-      <div class="tree-row pilot"><span class="fname"><span class="ic">◆</span>PRODUCT_PILOT.md</span><span class="fdesc">The main file your agent reads every session</span></div>
+      <div class="tree-row pilot"><span class="fname"><span class="ic">◆</span>PRODUCT_PILOT.md</span><span class="fdesc">The main file your agent should read at session start</span></div>
       <div class="tree-row"><span class="fname"><span class="ic">▸</span>PRODUCT_OVERVIEW.md</span><span class="fdesc">What the product is, who it's for, core principles</span></div>
       <div class="tree-row"><span class="fname"><span class="ic">▸</span>FEATURE_INVENTORY.md</span><span class="fdesc">What's built, what's planned, feature status</span></div>
       <div class="tree-row"><span class="fname"><span class="ic">▸</span>ROADMAP.md</span><span class="fdesc">Phased milestones with checklists and triggers</span></div>
@@ -546,8 +546,10 @@
           </div>
           <div class="code-block">
             <div class="label">…or copy a local folder</div>
-            <button class="copy-btn" data-copy="cp -r product-pilot ~/.claude/skills/product-pilot">Copy</button>
-            <pre><code>cp -r product-pilot ~/.claude/skills/product-pilot</code></pre>
+            <button class="copy-btn" data-copy="mkdir -p ~/.claude/skills/product-pilot
+rsync -a --checksum --exclude .git ./ ~/.claude/skills/product-pilot/">Copy</button>
+            <pre><code>mkdir -p ~/.claude/skills/product-pilot
+rsync -a --checksum --exclude .git ./ ~/.claude/skills/product-pilot/</code></pre>
           </div>
         </div>
 
@@ -560,8 +562,10 @@
           </div>
           <div class="code-block">
             <div class="label">…or copy a local folder</div>
-            <button class="copy-btn" data-copy="cp -r product-pilot ~/.codex/skills/product-pilot">Copy</button>
-            <pre><code>cp -r product-pilot ~/.codex/skills/product-pilot</code></pre>
+            <button class="copy-btn" data-copy="mkdir -p ~/.codex/skills/product-pilot
+rsync -a --checksum --exclude .git ./ ~/.codex/skills/product-pilot/">Copy</button>
+            <pre><code>mkdir -p ~/.codex/skills/product-pilot
+rsync -a --checksum --exclude .git ./ ~/.codex/skills/product-pilot/</code></pre>
           </div>
         </div>
       </div>
@@ -686,7 +690,8 @@
         btn.classList.add("copied");
         setTimeout(function () { btn.textContent = prev; btn.classList.remove("copied"); }, 1800);
       }).catch(function () {
-        btn.textContent = "Press ⌘C";
+        window.prompt("Copy this command:", btn.getAttribute("data-copy"));
+        btn.textContent = "Copy failed";
       });
     });
   });
