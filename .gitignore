@@ -12,6 +12,7 @@ Desktop.ini
 .vscode/
 *.sublime-project
 *.sublime-workspace
+.serena/
 
 # Misc
 .env
