@@ -66,7 +66,25 @@ What these do and do not enforce is in [`TOOLING_GAPS.md`](TOOLING_GAPS.md).
 
 ## Working with a dispatcher
 
-For a coordinator that builds queues and sends task packets, the reference adds a dispatcher block: poured milestone tasks sit in the intake order after confirmed bugs and before maintenance sweeps, every packet carries the banner output, and the Pilot's blocker list is the only release blocker list. The same file records what was observed in one such fleet on 2026-10-13.
+For a coordinator that builds queues and sends task packets, such as the Buzz desktop app's dispatcher persona, there are four wiring points:
+
+1. The Pilot rule sits inside the "Read first" block that packets copy verbatim, so a sandboxed worker that cannot read the repo still receives it.
+2. The dispatcher runs `pilot-banner.sh` against the repo's current main and pastes the output into every packet.
+3. Intake order: human-filed tickets, confirmed bugs, then `[unpoured]` tasks from the ACTIVE milestone poured into the tracker, then maintenance such as dependency bumps.
+4. Workers never edit the Pilot. One Owner persona runs `pilot-reconcile.sh --run-checks --apply` after merges and lands the edit by PR.
+
+A packet for a fictional product, as a dispatcher would send it:
+
+```
+ticket      LL-7 Share sheet for the CSV · repo ledgerlite · base main@a3f9c12 · owned paths Ledgerlite/Export/
+read first  (the repo's Read-first block, copied verbatim; it carries the Product Pilot rule)
+pilot       Phase 1 — Build · ACTIVE [1.2] First export · 2 open, 1 unpoured
+pilot       Blocking ship: no signing certificate (LL-9), a release gate, not a work gate
+pilot       Decision due: D1 export date format, default ISO 8601
+accept      Export tests pass on CI (milestone Check) · result thread #ledgerlite · do not edit docs/product/
+```
+
+The dispatcher block, hooks, and CI snippets are in [`references/AGENT_INSTRUCTION_REFERENCE.md`](references/AGENT_INSTRUCTION_REFERENCE.md); its last section records what was observed in the Buzz fleet's delivery protocol on 2026-10-13.
 
 ## Working with Product Design
 
