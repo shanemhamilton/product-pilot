@@ -182,7 +182,7 @@ Only on explicit request. Adds PRODUCT_OVERVIEW, FEATURE_INVENTORY, METRICS_AND_
 - A milestone is two to six tasks; a task is one pull request. Split anything larger.
 - Blockers are bullets with unblock condition, owner, ticket, since-date. No prose paragraphs.
 - Decision Pending has seven columns: ID, Decision, Tier, Default, Deadline, Owner, Since. Empty reads `_No pending decisions._`.
-- Recent Shipped is regenerated; its heading carries the since-date and its comment names the Shipped paths.
+- Recent Shipped is regenerated; its heading carries the since-date and its comment names the Shipped paths. The anchor is the merge base with `origin/main`, so it survives a squash merge.
 - Phase Transitions holds the next transition only, with a Check column.
 - Metrics Snapshot is optional before Traction. Each row has a Source. Pre-launch reads `_Pre-launch: no metrics tracked until first external users._`
 - Open Tooling Gaps names what is not enforced in this repo. Keep the section even when empty.
