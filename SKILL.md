@@ -5,13 +5,13 @@ description: >
   PRODUCT_PILOT.md that holds the phase, the ACTIVE milestone with ticket-tagged tasks and a
   runnable completion Check, ship blockers, decisions with defaults and deadlines, recent ships
   from git, and runway. Use it (1) to orient at session start or before a dispatched task ("what
-  should I work on", "what phase are we in", "what's blocking ship", "read the pilot"); (2) when
-  the work queue is empty and the next tickets must come from the roadmap ("pour the milestone",
-  "nothing ready", "what should the fleet build next"); (3) to reconcile after merges or releases
-  ("reconcile the pilot", "milestone done", "log what we shipped", "advance the milestone");
-  (4) when a project has no Pilot ("set up product pilot", "make my agent product-aware");
-  (5) when direction changed and the roadmap must be replanned. When in doubt, trigger it; it
-  detects the mode from what exists.
+  should I work on", "what's blocking us from shipping", "what phase are we in", "read the
+  pilot"); (2) when the work queue is empty and the next tickets must come from the roadmap
+  ("we're out of tickets, what's next", "nothing ready", "pour the milestone"); (3) after merges
+  or releases ("we shipped it, update the plan", "milestone done", "log what we shipped",
+  "reconcile the pilot"); (4) when a project has no Pilot ("set up a product pilot", "make my
+  agent product-aware"); (5) when direction changed and the roadmap must be replanned. When in
+  doubt, trigger it; it detects the mode from what exists.
 ---
 
 # Product Pilot
@@ -58,9 +58,9 @@ Legacy names map without edits: Ideation and MVP are Build; Validate is Traction
 
 | Signal | Mode |
 |--------|------|
-| Pilot exists; session start, dispatched task, "what should I work on" | **Orient** |
-| Pilot exists; the project's queue is empty, "what's next", "pour" | **Pour** |
-| Pilot exists; merges or releases landed, scheduled run, "milestone done", "log shipped" | **Reconcile** |
+| Pilot exists; session start, dispatched task, "what should I work on", "what's blocking us" | **Orient** |
+| Pilot exists; the project's queue is empty, "we're out of tickets", "what's next", "pour" | **Pour** |
+| Pilot exists; merges or releases landed, scheduled run, "we shipped it", "update the plan", "milestone done" | **Reconcile** |
 | Pilot exists; ACTIVE finished with no detailed next milestone, or a human changed direction | **Replan** |
 | No `PRODUCT_PILOT.md` anywhere in the project | **Setup** |
 
