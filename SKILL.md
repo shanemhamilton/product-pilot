@@ -21,7 +21,7 @@ description: >
 
 One file per product, under 140 lines, that an agent reads before acting and a script keeps true. It exists so an agent pipeline can run for days: the queue refills from the roadmap, milestones advance on evidence, routine decisions resolve by default, and a human is asked only for what only a human can supply.
 
-The scripts in `scripts/` do the deterministic work. `pilot-banner.sh` prints the orientation. `pilot-grep-checks.sh` enforces the file contract in hooks and CI. `pilot-reconcile.sh` regenerates the machine sections, runs the Checks, and advances the ACTIVE milestone. `selftest.sh` proves the three work. Install them by copying or symlinking `scripts/` into the host repo; `references/AGENT_INSTRUCTION_REFERENCE.md` has the hook, CI, and dispatcher wiring.
+The scripts in `scripts/` do the deterministic work. `pilot-banner.sh` prints the orientation. `pilot-grep-checks.sh` enforces the file contract in hooks and CI. `pilot-reconcile.sh` regenerates the machine sections, runs the Checks, and advances the ACTIVE milestone. `pilot-pour.sh` turns `[unpoured]` tasks into tracker tickets. `selftest.sh` proves the four work. Install them by copying or symlinking `scripts/` into the host repo; `references/AGENT_INSTRUCTION_REFERENCE.md` has the hook, CI, and dispatcher wiring.
 
 ---
 
@@ -86,11 +86,11 @@ Output stays under 25 lines. A dispatcher pastes this output into every task pac
 
 Run when the project's tracker shows nothing ready for this project. Pour turns roadmap tasks into tickets; it never invents work.
 
-1. List tasks tagged `[unpoured]` under the ACTIVE milestone, then under the next milestone.
-2. For each task create one ticket in the tracker the repo already uses (Beads `bd`, Linear, GitHub Issues; the repo's instruction file says which). Title: the task text. Body: milestone name, Completion signal, and the milestone `Check` as acceptance. Labels: the repo's convention.
-3. Replace `[unpoured]` with the ticket ID in the Pilot. The Owner persona lands this by PR; an agent that is the Owner edits directly.
-4. Dispatch the tickets through the normal queue.
-5. Nothing pourable: do not manufacture tasks. Report starvation to the Owner, naming the next sketched milestone. The Owner runs Replan.
+1. `scripts/pilot-pour.sh` lists the `[unpoured]` tasks under the ACTIVE milestone and the next one, and names the tracker it will use: Beads (`bd`) when the repo has `.beads`, GitHub Issues when it has a GitHub origin, otherwise payloads only.
+2. `scripts/pilot-pour.sh --apply` creates one ticket per task (title: the task text; body: milestone, Completion signal, Check; labels from `--labels` or the Pilot's `<!-- Pour labels: … -->` comment), dedupes by title first, and writes each ticket ID back into the Pilot in place.
+3. For a tracker the script cannot drive, such as Linear, create the ticket with your own tool and run `scripts/pilot-pour.sh --tag N ID` to write the ID back.
+4. The Owner commits the edited Pilot by PR. Dispatch the tickets through the normal queue.
+5. `STARVED` means nothing is pourable: do not manufacture tasks. Report it to the Owner, naming the next sketched milestone. The Owner runs Replan.
 
 Intake order for a dispatcher: human-filed tickets first, then confirmed bugs, then poured milestone tasks, then maintenance candidates. Poured tasks outrank dependency bumps and simplification sweeps because they move the product.
 
@@ -102,7 +102,7 @@ Evidence-driven maintenance. Runs after merges and releases, on a schedule, or w
 
 1. Run `scripts/pilot-reconcile.sh` and read the dry-run output: shipped count, ACTIVE Check result, open task count, phase transition Check, decisions due, runway.
 2. Tick tasks whose tickets are closed or whose PRs are merged. Verify in the tracker or `git log`, never from memory. The script does not know the tracker, so this step is yours.
-3. Run `scripts/pilot-reconcile.sh --run-checks --apply`. It regenerates Recent Shipped from git, sets the anchor and date, and moves `← ACTIVE` to the next milestone when the Check passes and every task is ticked. It writes a Changelog line for the move. Checks are shell commands from the Pilot, so they execute only with `--run-checks` and only when the Pilot is identical to `origin/main`; on an unmerged branch pass `--trust-local` knowingly or leave checks skipped.
+3. Run `scripts/pilot-reconcile.sh --run-checks --apply`. It regenerates Recent Shipped from git, sets the anchor and date, and moves `← ACTIVE` to the next milestone when the Check passes and every task is ticked. It writes a Changelog line for the move. Checks are shell commands from the Pilot, so they execute only with `--run-checks` and only when the whole working tree is identical to `origin/main`; on an unmerged branch pass `--trust-local` knowingly or leave checks skipped.
 4. For each agent-tier decision past its Deadline: apply the Default to the thing it governs, move the row to the ROADMAP.md Decision Log with "default applied at deadline", and remove it from Decision Pending.
 5. Blockers: remove a blocker only with evidence (merged PR, passing build, deploy readback). Add a new one only if it stops a release, with a ticket.
 6. `phase transition: check=PASS` means the trigger holds: change the phase label, replace the Phase Transitions row with the next transition, add a Changelog line. Update which docs are maintained per the Phases table.
@@ -199,7 +199,8 @@ Only on explicit request. Adds PRODUCT_OVERVIEW, FEATURE_INVENTORY, METRICS_AND_
 | `pilot-banner.sh` | SessionStart hook; pasted into dispatched task packets | Every session and every worker sees phase, blockers, ACTIVE tasks, runway |
 | `pilot-grep-checks.sh --pre-commit` | Git pre-commit | No structural defect lands; anchor cannot drift more than 20 commits without a Pilot edit |
 | `pilot-grep-checks.sh --ci` | Pull-request CI | Same contract for workers that run no local hooks |
-| `pilot-reconcile.sh --run-checks --apply` | Scheduled job or post-merge step run by the Owner on the merged state | Recent Shipped, anchor, and ACTIVE reflect git and the Checks; Checks run only against a Pilot identical to `origin/main` |
+| `pilot-reconcile.sh --run-checks --apply` | Scheduled job or post-merge step run by the Owner on the merged state | Recent Shipped, anchor, and ACTIVE reflect git and the Checks; Checks run only when the working tree is identical to `origin/main` |
+| `pilot-pour.sh --apply` | The dispatcher or Owner, when a project queue is empty | `[unpoured]` tasks become tracker tickets with the Check as acceptance, and their IDs are written back |
 
 What this does not reach is listed in `TOOLING_GAPS.md`. Write the repo-specific gaps into the Pilot's Open Tooling Gaps section.
 

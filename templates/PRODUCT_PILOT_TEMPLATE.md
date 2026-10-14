@@ -6,6 +6,7 @@
 <!-- Last commit captured: [PLACEHOLDER: SHORT_HASH — set by scripts/pilot-reconcile.sh] -->
 <!-- Owner: [PLACEHOLDER: OWNER — the one persona or person whose PRs edit this file] -->
 <!-- Edit policy: Owner edits land by PR. Recent Shipped, the anchor, and the ACTIVE marker are maintained by scripts/pilot-reconcile.sh; do not hand-edit them. Workers never edit this file from a task worktree. -->
+<!-- Pour labels: [PLACEHOLDER: LABELS_OR_none — labels pilot-pour.sh puts on new tickets, e.g. next:code] -->
 <!-- Target: under 140 lines. Detail belongs in ROADMAP.md. -->
 
 ## Quick Orientation
@@ -35,7 +36,7 @@
 
 ### Pour (when the work queue is empty)
 
-Tasks tagged `[unpoured]` under ACTIVE, then under the next milestone, are pourable. Create one tracker ticket per task with the task text and the milestone `Check` as acceptance, replace `[unpoured]` with the ticket ID, and dispatch. Never invent tasks. If nothing is pourable, report starvation to the Owner.
+Run `scripts/pilot-pour.sh --apply`. It creates one tracker ticket per `[unpoured]` task under ACTIVE, then the next milestone (Beads by default, GitHub Issues otherwise; `--tag N ID` for a tracker you drive yourself), with the milestone `Check` as acceptance, and writes the IDs back here. Never invent tasks. `STARVED` means nothing is pourable: report it to the Owner.
 
 ### Reconcile (after merges and releases, or on a schedule)
 

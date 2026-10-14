@@ -134,6 +134,22 @@ git commit -qam 'docs: drop rule' && sh "$HERE/pilot-reconcile.sh" --apply >/dev
 grep -q '^## Phase Transitions' docs/product/PRODUCT_PILOT.md || die "section after Recent Shipped preserved"
 grep -q 'fix: change 12' docs/product/PRODUCT_PILOT.md || die "regen without rule line"; ok "recent shipped boundary without rule"
 
+# Pour: the unpoured task under the new ACTIVE milestone is listed, created, and tagged.
+P=$(sh "$HERE/pilot-pour.sh" --tracker none)
+printf '%s' "$P" | grep -q '1\. \[1.2\] Second slice :: Add export' || die "pour dry run lists the task"
+printf '%s' "$P" | grep -q 'dry run: 1 pourable' || die "pour dry run count"
+if command -v bd >/dev/null 2>&1; then
+  bd init --prefix t --skip-hooks --skip-agents -q >/dev/null 2>&1 || die "bd init in the fixture repo"
+  sh "$HERE/pilot-pour.sh" --apply --tracker bd --labels next:code | grep -q 'created: t-' || die "pour creates a bead"
+  grep -qE '\- \[ \] \[t-[a-z0-9]+\] Add export' docs/product/PRODUCT_PILOT.md || die "pour wrote the bead id back"
+  bd list --title "Add export" --json 2>/dev/null | grep -q 'next:code' || die "bead carries the label"
+  ok "pour with beads"
+else
+  sh "$HERE/pilot-pour.sh" --tag 1 X-1 >/dev/null && grep -q '\[X-1\] Add export' docs/product/PRODUCT_PILOT.md || die "pour --tag writes back"
+  ok "pour --tag (bd not installed)"
+fi
+sh "$HERE/pilot-pour.sh" | grep -q STARVED || die "pour reports STARVED when nothing is pourable"; ok "pour starvation"
+
 printf '\n- **[1.3] Dup** ← ACTIVE\n' >> docs/product/PRODUCT_PILOT.md
 sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null 2>&1 && die "two ACTIVE markers must fail"; ok "grep-checks fail on two ACTIVE"
 echo "selftest: all checks passed"
