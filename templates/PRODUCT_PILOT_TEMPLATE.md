@@ -52,7 +52,8 @@ Routine product choices are yours: pick, record one line in the task or the Deci
 
 <!-- One phase, 2-4 milestones. Exactly ONE milestone carries ← ACTIVE.
      Task tag: [TICKET-ID] or [unpoured]. Check: a command that exits 0 when the milestone is done.
-     A milestone without a runnable Check cannot auto-advance; write Check: `manual — <evidence>`. -->
+     A milestone without a runnable Check cannot auto-advance; write Check: `manual — <evidence>`.
+     A ticked task cites a commit SHA, build number, receipt path, or CI run URL on its line. -->
 
 ### Phase [PLACEHOLDER: PHASE_NUMBER]: [PLACEHOLDER: PHASE_NAME]
 

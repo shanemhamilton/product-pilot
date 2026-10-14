@@ -39,7 +39,7 @@ see template
 ### Phase 1: Build
 
 - **[1.1] First slice** ← ACTIVE
-  - [x] [T-1] Scaffold
+  - [x] [T-1] Scaffold at \`a1b2c3d\`
   - [ ] [T-2] Wire storage
   - Check: \`test -f src/a.txt\`
   - Completion signal: file exists
@@ -118,7 +118,10 @@ printf '%s' "$R" | grep -q 'recent shipped: 13 commit' || die "reconcile counts 
 printf '%s' "$R" | grep -q 'DECISION DUE' || die "reconcile reports decision due"
 grep -q '0000000 placeholder' docs/product/PRODUCT_PILOT.md || die "dry run must not write"; ok "reconcile dry run"
 
-sed -i.bak 's/- \[ \] \[T-2\]/- [x] [T-2]/' docs/product/PRODUCT_PILOT.md && rm -f docs/product/PRODUCT_PILOT.md.bak
+sed -i.bak 's/- \[ \] \[T-2\] Wire storage/- [x] [T-2] Wire storage merged, PR #5/' docs/product/PRODUCT_PILOT.md && rm -f docs/product/PRODUCT_PILOT.md.bak
+sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null 2>&1 && die "a tick citing only a PR number must fail"
+sed -i.bak 's/Wire storage merged, PR #5/Wire storage merged, PR #5 (build #7)/' docs/product/PRODUCT_PILOT.md && rm -f docs/product/PRODUCT_PILOT.md.bak
+sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null || die "a tick citing a build number must pass"; ok "ticks require execution evidence"
 AP=$(sh "$HERE/pilot-reconcile.sh" --run-checks --trust-local --apply); printf '%s' "$AP" | grep -q 'ADVANCE: moved' || die "reconcile --run-checks --apply advances"
 grep -q '^- \*\*\[1.2\] Second slice\*\* ← ACTIVE' docs/product/PRODUCT_PILOT.md || die "marker moved to 1.2"
 [ "$(grep -c '← ACTIVE[[:space:]]*$' docs/product/PRODUCT_PILOT.md)" = 1 ] || die "exactly one ACTIVE after advance"

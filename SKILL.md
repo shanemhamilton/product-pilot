@@ -101,7 +101,7 @@ Intake order for a dispatcher: human-filed tickets first, then confirmed bugs, t
 Evidence-driven maintenance. Runs after merges and releases, on a schedule, or when asked. No questions.
 
 1. Run `scripts/pilot-reconcile.sh` and read the dry-run output: shipped count, ACTIVE Check result, open task count, phase transition Check, decisions due, runway.
-2. Tick tasks whose tickets are closed or whose PRs are merged. Verify in the tracker or `git log`, never from memory. The script does not know the tracker, so this step is yours.
+2. Tick tasks whose tickets are closed or whose PRs are merged, and put the evidence on the line: the merge commit SHA, a build number, a receipt path, or a CI run URL. A PR number, "merged", or a date alone is rejected by the structure check. Verify in the tracker or `git log`, never from memory. The script does not know the tracker, so this step is yours.
 3. Run `scripts/pilot-reconcile.sh --run-checks --apply`. It regenerates Recent Shipped from git, sets the anchor and date, and moves `← ACTIVE` to the next milestone when the Check passes and every task is ticked. It writes a Changelog line for the move. Checks are shell commands from the Pilot, so they execute only with `--run-checks` and only when the whole working tree is identical to `origin/main`; on an unmerged branch pass `--trust-local` knowingly or leave checks skipped.
 4. For each agent-tier decision past its Deadline: apply the Default to the thing it governs, move the row to the ROADMAP.md Decision Log with "default applied at deadline", and remove it from Decision Pending.
 5. Blockers: remove a blocker only with evidence (merged PR, passing build, deploy readback). Add a new one only if it stops a release, with a ticket.
@@ -177,6 +177,7 @@ Only on explicit request. Adds PRODUCT_OVERVIEW, FEATURE_INVENTORY, METRICS_AND_
 - 140 lines or fewer. Detail lives in ROADMAP.md.
 - Exactly one `← ACTIVE` marker, at the end of the milestone line.
 - Every task line is `- [ ] [TICKET-ID] text` or `- [ ] [unpoured] text`. A task waiting on a decision ends with `(blocked-on D<n>)`.
+- A ticked task cites execution evidence on its line: a commit SHA, a build number, a receipt or artifact path, or a CI run URL. A PR number, "merged", or a date alone does not count, and `pilot-grep-checks.sh` rejects it.
 - Every milestone has `Check:` with one backticked command, or `manual — <evidence>`, and a Completion signal.
 - A milestone is two to six tasks; a task is one pull request. Split anything larger.
 - Blockers are bullets with unblock condition, owner, ticket, since-date. No prose paragraphs.

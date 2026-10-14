@@ -55,6 +55,26 @@ if [ "$UNTAGGED" != "0" ]; then
   case "$FMT" in 3*) fail "$UNTAGGED task(s) without a [TICKET] or [unpoured] tag";; *) warn "$UNTAGGED task(s) without a [TICKET] tag (format $FMT; required from 3.0)";; esac
 fi
 
+# 8. Every ticked task cites execution evidence on its line: a commit SHA, a build number,
+#    a receipt or artifact path, or a CI run URL. A PR number, "merged", or a date alone is not evidence.
+has_evidence() {
+  printf '%s' "$1" | grep -qE '`[0-9a-f]{7,40}`|(^|[^A-Za-z])(build|builds|BK|Buildkite|run) #?[0-9]+|https?://[^ )]+/(builds|actions/runs)/[0-9]+|(^|[^A-Za-z0-9])(OUTBOX|receipts?|artifacts?|manifests?|proofs?)/[A-Za-z0-9_./-]+' && return 0
+  for w in $(printf '%s' "$1" | grep -oE '(^|[^0-9A-Za-z])[0-9a-f]{7,40}([^0-9A-Za-z]|$)' | tr -cd '0-9a-f\n'); do
+    case "$w" in *[a-f]*) case "$w" in *[0-9]*) return 0;; esac;; esac
+  done
+  return 1
+}
+NOEVID=0
+while IFS= read -r line; do
+  [ -n "$line" ] || continue
+  has_evidence "$line" || NOEVID=$((NOEVID + 1))
+done <<EOF
+$(awk '/^## Active Milestones/{p=1} /^## Decision Pending/{p=0} p' "$PILOT" | grep -E '^[[:space:]]*- \[x\] ')
+EOF
+if [ "$NOEVID" != "0" ]; then
+  case "$FMT" in 3*) fail "$NOEVID ticked task(s) without a commit SHA, build number, receipt path, or CI run URL";; *) warn "$NOEVID ticked task(s) without execution evidence (required from 3.0)";; esac
+fi
+
 DIVERGENCE=$(pilot_divergence)
 HEAD_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
 
