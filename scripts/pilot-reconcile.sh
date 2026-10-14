@@ -35,7 +35,9 @@ run_check() { # $1 = command; prints PASS/FAIL/skipped and returns its status
   echo "running: $1" >&2
   if $TIMEOUT sh -c "$1" >/dev/null 2>&1; then echo PASS; return 0; else echo FAIL; return 1; fi
 }
-HEAD_SHORT=$(git rev-parse --short HEAD)
+# The anchor must survive a squash merge, so it is the merge base with origin/main when one exists.
+ANCHOR_REF=$(git merge-base HEAD origin/main 2>/dev/null || git rev-parse HEAD)
+HEAD_SHORT=$(git rev-parse --short "$ANCHOR_REF")
 TD=$(mktemp -d) || exit 2; trap 'rm -rf "$TD"' EXIT  # private scratch dir; no predictable names
 TMP="$TD/pilot"; cp "$PILOT" "$TMP"
 

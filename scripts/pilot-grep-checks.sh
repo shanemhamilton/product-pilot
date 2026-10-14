@@ -34,7 +34,10 @@ ACTIVE_COUNT=$(grep -cE "(← ACTIVE|<- ACTIVE)[[:space:]]*$" "$PILOT" || true)
 # 4. Anchor references a real commit.
 LAST_HASH=$(pilot_header "Last commit captured")
 if [ -z "$LAST_HASH" ]; then fail "missing 'Last commit captured: <sha>' header"
-elif ! git cat-file -e "$LAST_HASH" 2>/dev/null; then fail "Last commit captured references unknown commit $LAST_HASH"; fi
+elif ! git cat-file -e "$LAST_HASH" 2>/dev/null; then
+  if [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then warn "Last commit captured $LAST_HASH is not in this shallow clone; not verified (checkout with fetch-depth: 0 to verify)"
+  else fail "Last commit captured references unknown commit $LAST_HASH"; fi
+fi
 
 # 5. Required sections.
 for S in "## Quick Orientation" "## Agent Operating Instructions" "## Active Milestones" "## Decision Pending" \
