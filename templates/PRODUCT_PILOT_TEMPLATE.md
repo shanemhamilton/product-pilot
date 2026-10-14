@@ -1,181 +1,140 @@
 # Product Pilot
 
-<!-- Product Pilot context file. Session-start reads depend on host instructions or hooks; see Open Tooling Gaps. -->
-<!-- Product Pilot format version: 2.2 -->
-<!-- Pilot scope: [PLACEHOLDER: SCOPE — Full | Lite | Micro] -->
+<!-- Product Pilot format version: 3.0 -->
+<!-- Pilot scope: [PLACEHOLDER: SCOPE — Lean | Full] -->
 <!-- Last updated: [PLACEHOLDER: DATE] -->
-<!-- Last commit captured: [PLACEHOLDER: SHORT_HASH — the most recent commit this Pilot has been reconciled against. Update with `git rev-parse --short HEAD` whenever this Pilot is edited.] -->
-<!-- Owner: [PLACEHOLDER: OWNER_NAME] -->
-<!-- Target: under 140 lines. Move operational detail (commit hashes inside milestones, sub-task tracking, full transition tables) to supporting docs when this file grows. -->
+<!-- Last commit captured: [PLACEHOLDER: SHORT_HASH — set by scripts/pilot-reconcile.sh] -->
+<!-- Owner: [PLACEHOLDER: OWNER — the one persona or person whose PRs edit this file] -->
+<!-- Edit policy: Owner edits land by PR. Recent Shipped, the anchor, and the ACTIVE marker are maintained by scripts/pilot-reconcile.sh; do not hand-edit them. Workers never edit this file from a task worktree. -->
+<!-- Target: under 140 lines. Detail belongs in ROADMAP.md. -->
 
 ## Quick Orientation
 
-[PLACEHOLDER: PRODUCT_DESCRIPTION — 2-3 sentences describing what the product does and who it's for]
+[PLACEHOLDER: PRODUCT_DESCRIPTION — 2-3 sentences: what it does, who it is for, where it runs]
 
-**Current phase:** [PLACEHOLDER: PHASE_NUMBER] — [PLACEHOLDER: PHASE_NAME]
-**Deep context:** Full/Lite scopes list supporting docs in the Product Docs Index. Micro scope uses this Pilot only.
+**Current phase:** [PLACEHOLDER: PHASE_NUMBER] — [PLACEHOLDER: PHASE_NAME — Build | Launch | Traction | Grow | Mature]
+**Phase metric:** [PLACEHOLDER: ONE_METRIC_OR_"none until Launch"] — Source: `[PLACEHOLDER: COMMAND_OR_QUERY]`
+**Deep context:** `ROADMAP.md`. Full scope also lists docs in the Product Docs Index.
 
 ### What's Blocking Ship
 
-<!-- BULLETIZED. Each blocker = one bullet with what unblocks it, the owner, and a since-date.
-     If you find yourself writing prose paragraphs here, you are doing it wrong — the structure
-     exists to force specificity. Two-three blockers max; older ones move to a supporting doc. -->
+<!-- A blocker stops a release, never the work queue. One bullet each, two or three at most.
+     Each bullet: name, observable unblock condition, owner, ticket, since-date. -->
 
-- **[PLACEHOLDER: BLOCKER_NAME]** — Unblocked when: [PLACEHOLDER: CONDITION]. Owner: [PLACEHOLDER: NAME]. Since: [PLACEHOLDER: DATE]
-- **[PLACEHOLDER: BLOCKER_NAME]** — Unblocked when: [PLACEHOLDER: CONDITION]. Owner: [PLACEHOLDER: NAME]. Since: [PLACEHOLDER: DATE]
+- **[PLACEHOLDER: BLOCKER_NAME]** — Unblocked when: [PLACEHOLDER: OBSERVABLE_CONDITION]. Owner: [PLACEHOLDER: PERSONA_OR_PERSON]. Ticket: [PLACEHOLDER: ID_OR_none]. Since: [PLACEHOLDER: DATE]
 
 ---
 
 ## Agent Operating Instructions
 
-<!-- This section is intentionally placed BEFORE milestone state and history. Read these
-     instructions before you interpret any milestone, blocker, or shipped-work claim below. -->
+### Orient (every session and every dispatched task)
 
-### Session Start
+1. Read this file. Compare `Last commit captured` with `git rev-parse --short origin/main`. More than 10 commits behind means Recent Shipped is stale: run `scripts/pilot-reconcile.sh` or ask the Owner to.
+2. Find the `← ACTIVE` milestone. Its open tasks come first. A task marked `(blocked-on D<n>)` waits for that decision; nothing else waits.
+3. If your task is not under the ACTIVE milestone, do it anyway and note the divergence in your result.
 
-1. Read this Pilot file end-to-end before starting work
-2. Verify the `Last commit captured` header against `git rev-parse --short HEAD`. If they differ by more than ~10 commits, run the Recent Shipped regenerate command before continuing — the Pilot is behind reality
-3. Identify the `← ACTIVE` milestone
-4. If this Pilot includes a Product Docs Index and your work relates to a product doc, load the relevant PM skill if installed
-5. If the `← ACTIVE` milestone has all tasks checked off, prompt: "Milestone [X] appears complete. Should we advance `← ACTIVE` to the next milestone?"
-6. If `Last updated` is more than 30 days ago, prompt for a Pilot review before starting new work
-7. If this Pilot includes a Product Docs Index, scan the `Last reviewed` column — flag any doc more than 30 days stale: "[DOC] hasn't been reviewed in over 30 days. Consider updating it this session or scheduling a review."
-8. If your current task doesn't align with the `← ACTIVE` milestone, proceed with your task but note the divergence. At session end, consider whether this Pilot needs updating to reflect the actual workstream
+### Pour (when the work queue is empty)
 
-**Context depth by task type:**
-- **Quick task** (bug fix, config change): Read only this Pilot
-- **Feature work**: Read this Pilot + `FEATURE_INVENTORY.md` + `ROADMAP.md`
-- **Strategic work** (new phase, pivot, major planning): Read all docs in this directory
+Tasks tagged `[unpoured]` under ACTIVE, then under the next milestone, are pourable. Create one tracker ticket per task with the task text and the milestone `Check` as acceptance, replace `[unpoured]` with the ticket ID, and dispatch. Never invent tasks. If nothing is pourable, report starvation to the Owner.
 
-### Session End — Update relevant docs alongside code changes
+### Reconcile (after merges and releases, or on a schedule)
 
-<!-- Honest framing: this checklist is documentation-only unless the host harness adds enforcement
-     (pre-commit hook, CI check). See OPEN TOOLING GAPS below. Skip if changes were trivial
-     (typo fixes, config tweaks, non-functional). -->
+Run `scripts/pilot-reconcile.sh --apply`. It regenerates Recent Shipped, updates the anchor, runs each `Check`, and reports overdue decisions and runway. Then tick tasks whose tickets are closed, let the script advance `← ACTIVE` when the milestone Check passes, apply the Default of any agent-tier decision past its Deadline, and log it in `ROADMAP.md`.
 
-| Work type | Update this doc | Skill (if available) |
-|-----------|----------------|----------------------|
-| Feature shipped | `FEATURE_INVENTORY.md` | `feature-spec` |
-| Milestone complete | `ROADMAP.md` + this Pilot | `roadmap-management` |
-| New metric data | `METRICS_AND_OKRS.md` | `metrics-tracking` |
-| User insight | `USER_RESEARCH.md` | `user-research-synthesis` |
-| Competitive intel | `COMPETITIVE_LANDSCAPE.md` | `competitive-analysis` |
+### Decide
 
-When you edit this Pilot, also update `Last updated` and `Last commit captured` in the header.
+Routine product choices are yours: pick, record one line in the task or the Decision Log, continue. Add a Decision Pending row only for a choice that must wait, and give it a Tier, a Default, and a Deadline.
 
 ---
 
 ## Active Milestones
 
-### [PLACEHOLDER: PHASE_NAME]
+<!-- One phase, 2-4 milestones. Exactly ONE milestone carries ← ACTIVE.
+     Task tag: [TICKET-ID] or [unpoured]. Check: a command that exits 0 when the milestone is done.
+     A milestone without a runnable Check cannot auto-advance; write Check: `manual — <evidence>`. -->
 
-<!-- 2-4 milestones typical. Delete unused blocks. Exactly ONE milestone marked ← ACTIVE. -->
+### Phase [PLACEHOLDER: PHASE_NUMBER]: [PLACEHOLDER: PHASE_NAME]
 
-- **[PLACEHOLDER: MILESTONE_ID] [PLACEHOLDER: MILESTONE_NAME]** ← ACTIVE
-  - [ ] [PLACEHOLDER: TASK_1]
-  - [ ] [PLACEHOLDER: TASK_2]
-  - Completion signal: [PLACEHOLDER: HOW_TO_KNOW_ITS_DONE]
+- **[[PLACEHOLDER: ID]] [PLACEHOLDER: MILESTONE_NAME]** ← ACTIVE
+  - [ ] [[PLACEHOLDER: TICKET_ID_OR_unpoured]] [PLACEHOLDER: TASK_1]
+  - [ ] [[PLACEHOLDER: TICKET_ID_OR_unpoured]] [PLACEHOLDER: TASK_2]
+  - Check: `[PLACEHOLDER: COMMAND]`
+  - Completion signal: [PLACEHOLDER: ONE_SENTENCE]
 
-- **[PLACEHOLDER: MILESTONE_ID] [PLACEHOLDER: MILESTONE_NAME]**
-  - [ ] [PLACEHOLDER: TASK_1]
-  - [ ] [PLACEHOLDER: TASK_2]
-  - Completion signal: [PLACEHOLDER: HOW_TO_KNOW_ITS_DONE]
-  - Dependency: [PLACEHOLDER: UPSTREAM_MILESTONE]
+- **[[PLACEHOLDER: ID]] [PLACEHOLDER: MILESTONE_NAME]**
+  - [ ] [unpoured] [PLACEHOLDER: TASK_1]
+  - Check: `[PLACEHOLDER: COMMAND]`
+  - Completion signal: [PLACEHOLDER: ONE_SENTENCE]
+  - Dependency: [PLACEHOLDER: UPSTREAM_MILESTONE_ID]
 
-### [PLACEHOLDER: NEXT_PHASE_NAME] (sketched — activate after current phase)
+### Phase [PLACEHOLDER: NEXT_PHASE_NUMBER]: [PLACEHOLDER: NEXT_PHASE_NAME] (sketched)
 
-- [PLACEHOLDER: MILESTONE_ID] [PLACEHOLDER: MILESTONE_NAME] — [PLACEHOLDER: BRIEF_DESCRIPTION]
-- [PLACEHOLDER: MILESTONE_ID] [PLACEHOLDER: MILESTONE_NAME] — [PLACEHOLDER: BRIEF_DESCRIPTION]
+- [PLACEHOLDER: ID] [PLACEHOLDER: MILESTONE_NAME] — [PLACEHOLDER: ONE_LINE]
 
 ---
 
 ## Decision Pending
 
-<!-- Aging proposals that have NOT been killed, scheduled, or re-deferred. Each row needs an
-     owner and a since-date. If a row sits here longer than 30 days, force a decision or kill it.
-     If empty, write "_No pending decisions._" — do not delete this section.
-     When a row is resolved, MOVE the decision into ROADMAP.md's Decision Log with the rationale,
-     then remove it from this table. This Pilot tracks open decisions; ROADMAP.md is the audit
-     trail of resolved ones. -->
+<!-- Tier agent: the Owner applies the Default at the Deadline and logs it in ROADMAP.md.
+     Tier human: waits for the named person; only tasks marked (blocked-on D<n>) wait with it.
+     If empty, write "_No pending decisions._" and keep the section. -->
 
-
-| Decision | Owner | Since | Next step |
-|----------|-------|-------|-----------|
-| [PLACEHOLDER: PROPOSAL] | [PLACEHOLDER: NAME] | [PLACEHOLDER: DATE] | [PLACEHOLDER: NEXT_STEP_OR_KILL_DATE] |
+| ID | Decision | Tier | Default | Deadline | Owner | Since |
+|----|----------|------|---------|----------|-------|-------|
+| D1 | [PLACEHOLDER: CHOICE] | [PLACEHOLDER: agent_OR_human] | [PLACEHOLDER: OPTION_TAKEN_IF_UNANSWERED] | [PLACEHOLDER: DATE] | [PLACEHOLDER: NAME] | [PLACEHOLDER: DATE] |
 
 ---
 
 ## Recent Shipped (since [PLACEHOLDER: DATE])
 
-<!-- Regenerate this section before any session-start or Pilot review. The single source of truth
-     is the git log; restating it here gives an agent reading the Pilot a coverage anchor.
+<!-- Shipped paths: [PLACEHOLDER: DIRS_OR_DOT] -->
+<!-- Regenerated by scripts/pilot-reconcile.sh from git log. Do not hand-edit. -->
 
-     Regenerate command (run from repo root, replace YYYY-MM-DD with the date in the heading):
-       git log --oneline --since=YYYY-MM-DD -- [PLACEHOLDER: NAMED_DIRS_OR_DOT]
-
-     Update the heading date and the `Last commit captured` header field whenever you regenerate. -->
-
-- [PLACEHOLDER: SHORT_HASH] [PLACEHOLDER: ONE_LINE_SUMMARY]
-- [PLACEHOLDER: SHORT_HASH] [PLACEHOLDER: ONE_LINE_SUMMARY]
+- [PLACEHOLDER: SHORT_HASH] [PLACEHOLDER: SUBJECT]
 
 ---
 
 ## Phase Transitions
 
-<!-- ONLY the next transition. Full transition tables belong in ROADMAP.md.
-     Trigger must be data-driven (a metric threshold, a user count, a deployment), not a date. -->
+<!-- Next transition only. The Check is a command that exits 0 when the trigger holds.
+     A transition changes the phase label and which docs are maintained. It never pauses the queue. -->
 
-| Transition | Trigger |
-|-----------|---------|
-| [PLACEHOLDER: CURRENT_PHASE] → [PLACEHOLDER: NEXT_PHASE] | [PLACEHOLDER: DATA_DRIVEN_TRIGGER] |
+| Transition | Trigger | Check |
+|-----------|---------|-------|
+| [PLACEHOLDER: CURRENT] → [PLACEHOLDER: NEXT] | [PLACEHOLDER: OBSERVABLE_TRIGGER] | `[PLACEHOLDER: COMMAND]` |
 
 ---
 
 ## Metrics Snapshot
 
-<!-- 3-5 metrics typical. Category column ties each metric to an AARRR family so you can see
-     at a glance which families are unmonitored. Full definitions live in METRICS_AND_OKRS.md. -->
+<!-- Optional before Traction. Source is a command or query an agent can run; no Source means [TODO: source]. -->
 
-| Metric | Category | Target | Current |
-|--------|----------|--------|---------|
-| [PLACEHOLDER: METRIC_1] | [PLACEHOLDER: AARRR — Acquisition / Activation / Engagement / Retention / Revenue] | [PLACEHOLDER: TARGET] | [PLACEHOLDER: CURRENT_OR_PRE_LAUNCH] |
-| [PLACEHOLDER: METRIC_2] | [PLACEHOLDER: AARRR] | [PLACEHOLDER: TARGET] | [PLACEHOLDER: CURRENT_OR_PRE_LAUNCH] |
-| [PLACEHOLDER: METRIC_3] | [PLACEHOLDER: AARRR] | [PLACEHOLDER: TARGET] | [PLACEHOLDER: CURRENT_OR_PRE_LAUNCH] |
+| Metric | Target | Current | Source |
+|--------|--------|---------|--------|
+| [PLACEHOLDER: METRIC] | [PLACEHOLDER: TARGET_OR_TODO] | [PLACEHOLDER: CURRENT_OR_TODO] | `[PLACEHOLDER: COMMAND]` |
 
 ---
 
 ## Open Tooling Gaps
 
-<!-- Known limitations of the harness or enforcement layer that this Pilot CANNOT fix on its own.
-     Use this section to flag where doc-only rules are pretending to be enforced. If empty,
-     write "_No known gaps._" — do not delete this section. -->
+<!-- What is NOT enforced here. If empty, write "_No known gaps._" and keep the section. -->
 
-- [PLACEHOLDER: GAP_DESCRIPTION — e.g., "No pre-commit hook enforces session-end doc updates; this Pilot relies on agent compliance."]
+- [PLACEHOLDER: GAP — e.g. "No CI check on this repo; freshness relies on the pre-commit guard."]
 
 ---
 
 ## Product Docs Index
 
-<!-- Lite scope: list only the 3 generated docs (PRODUCT_OVERVIEW, FEATURE_INVENTORY, ROADMAP). -->
-<!-- Micro scope: omit this entire section. -->
-<!-- The "Last reviewed" column reads each doc's Last reviewed header comment. Review
-     cadence without per-doc timestamps is meaningless — both columns are required. -->
+<!-- Full scope only. Lean scope omits this section. -->
 
-| File | What's in it | Review cadence | Last reviewed |
-|------|-------------|----------------|---------------|
-| `PRODUCT_OVERVIEW.md` | Vision, mission, principles, target users | Quarterly | [PLACEHOLDER: DATE] |
-| `FEATURE_INVENTORY.md` | Shipped + planned features with lightweight PRDs | After each feature ships | [PLACEHOLDER: DATE] |
-| `ROADMAP.md` | Phased roadmap with milestones and prioritization | Monthly | [PLACEHOLDER: DATE] |
-| `METRICS_AND_OKRS.md` | Metric definitions, OKRs, review templates | Weekly (metrics), Quarterly (OKRs) | [PLACEHOLDER: DATE] |
-| `USER_RESEARCH.md` | User segments, personas, hypotheses to validate | After each research cycle | [PLACEHOLDER: DATE] |
-| `COMPETITIVE_LANDSCAPE.md` | Competitor analysis with feature matrix and positioning | Quarterly | [PLACEHOLDER: DATE] |
+| File | What's in it | Last reviewed |
+|------|-------------|---------------|
+| `ROADMAP.md` | Milestones, decision log, phase exit criteria | [PLACEHOLDER: DATE] |
 
 ---
 
 ## Changelog
 
-<!-- Append-only log of structural changes to THIS Pilot. Format: YYYY-MM-DD — what changed.
-     Routine content edits (milestone tick-offs, metric updates) do NOT belong here — only
-     structural changes (sections added/removed/reordered, format-version bumps). -->
+<!-- Structural changes to THIS file only. -->
 
-- [PLACEHOLDER: DATE] — Initial Pilot generated (format version 2.2)
+- [PLACEHOLDER: DATE] — Initial Pilot generated (format version 3.0)

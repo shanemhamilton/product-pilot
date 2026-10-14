@@ -1,609 +1,298 @@
 ---
 name: product-pilot
 description: >
-  Product Pilot — the AI-agent product context system. Use in three situations:
-  (1) Session start — when loading product context before beginning work ("what should I work on",
-  "what's the current milestone", "read the product pilot", "catch me up on where we are",
-  "what phase are we in", "what's blocking us");
-  (2) Setup — when a project has no product docs yet ("set up product pilot", "create product
-  context", "bootstrap product docs", "make my agent product-aware");
-  (3) Update — when a milestone completes or phase shifts ("update the pilot", "milestone done",
-  "we moved to the next phase", "log what we shipped"). When in doubt, trigger this skill — it
-  detects the right mode automatically based on what exists in the project.
+  Product Pilot — product context for autonomous coding agents. Creates and maintains a
+  PRODUCT_PILOT.md that holds the phase, the ACTIVE milestone with ticket-tagged tasks and a
+  runnable completion Check, ship blockers, decisions with defaults and deadlines, recent ships
+  from git, and runway. Use it (1) to orient at session start or before a dispatched task ("what
+  should I work on", "what phase are we in", "what's blocking ship", "read the pilot"); (2) when
+  the work queue is empty and the next tickets must come from the roadmap ("pour the milestone",
+  "nothing ready", "what should the fleet build next"); (3) to reconcile after merges or releases
+  ("reconcile the pilot", "milestone done", "log what we shipped", "advance the milestone");
+  (4) when a project has no Pilot ("set up product pilot", "make my agent product-aware");
+  (5) when direction changed and the roadmap must be replanned. When in doubt, trigger it; it
+  detects the mode from what exists.
 ---
 
-# Product Pilot — Setup Skill
+# Product Pilot
 
 <!-- Source: https://github.com/shanemhamilton/product-pilot -->
-<!-- Product Pilot package version: 2.3 -->
+<!-- Product Pilot package version: 3.0 -->
 
-This skill creates and maintains a Product Pilot — a standalone file that gives AI coding agents product awareness: what phase you're in, what milestone is active, what's blocking ship, what metrics matter, what just shipped, what decisions are pending, and what docs to update when done.
+One file per product, under 140 lines, that an agent reads before acting and a script keeps true. It exists so an agent pipeline can run for days: the queue refills from the roadmap, milestones advance on evidence, routine decisions resolve by default, and a human is asked only for what only a human can supply.
 
-**Honest scope note:** This skill does not enforce session-start reads or session-end doc updates — those are the agent's voluntary responsibility. See `TOOLING_GAPS.md` for the harness gaps and what tenants can do to close them.
+The scripts in `scripts/` do the deterministic work. `pilot-banner.sh` prints the orientation. `pilot-grep-checks.sh` enforces the file contract in hooks and CI. `pilot-reconcile.sh` regenerates the machine sections, runs the Checks, and advances the ACTIVE milestone. `selftest.sh` proves the three work. Install them by copying or symlinking `scripts/` into the host repo; `references/AGENT_INSTRUCTION_REFERENCE.md` has the hook, CI, and dispatcher wiring.
+
+---
+
+## Operating Principles
+
+Read these before any mode. They decide what the skill asks for and what it refuses to add.
+
+1. **Zero-to-one first.** Until the product has external users, the skill asks for three things only: what ships next, what blocks shipping, and where it deploys. User interviews, surveys, personas, competitor matrices, OKRs, and quarterly reviews are opt-in workstreams that unlock at Traction or later, and only when the human asks for them. The skill never adds them on its own, never makes them milestone tasks, and never makes them phase triggers.
+2. **Agents research; humans decide only what only humans can.** Setup and replanning read the repo, the tracker, the store listing, and the web when tools exist. They do not interview the human. Whatever no source answers is written as `[TODO: …]`. A `[TODO]` never blocks work.
+3. **Gates stop releases, never the queue.** A ship blocker, a pending human decision, or an unmet phase trigger holds the one thing it names. Work on the next task continues. A Pilot that pauses engineering on a research outcome is a defect.
+4. **Evidence over claims.** Recent Shipped comes from `git log`. Milestone completion comes from a `Check` command that exits 0. Metric values come from a `Source` command or stay `[TODO]`. Commit hashes come from git. Nothing in the file is written from memory.
+5. **Decide and record.** Routine product choices belong to the agent: choose, write one line in the task or the Decision Log, continue. If a decision-authority skill such as `decision-compass` is installed, follow it. A Decision Pending row is for a choice that must wait, and it carries a Tier (`agent` or `human`), a Default, and a Deadline. Agent-tier rows resolve to their Default at the Deadline.
+6. **One owner, by PR.** A named persona owns Pilot edits and lands them by pull request. Workers never edit the Pilot from a task worktree. The scripts own Recent Shipped, the anchor, and the ACTIVE marker.
+
+---
+
+## Phases
+
+| Phase | Means | The Pilot asks for | Not yet (opt-in later) |
+|-------|-------|--------------------|------------------------|
+| **Build** | No external users. Building the first shippable slice. | ACTIVE milestone plus the next one, ship blockers, deploy target | Metrics, research, competitors, OKRs |
+| **Launch** | First external availability: store listing, public URL, invite list. | Release steps as tasks; one phase metric with a Source if the product already emits it | Surveys, interviews, competitive review |
+| **Traction** | External users exist and the product emits signal. | One to three metrics with Sources; feature inventory if useful | OKRs, personas, moats |
+| **Grow** | Repeatable acquisition or retention. | Full-scope docs on request; research and competitive reviews when the human turns them on | — |
+| **Mature** | Optimization and expansion. | Whatever the human turns on | — |
+
+Legacy names map without edits: Ideation and MVP are Build; Validate is Traction; Monetize is Traction or Grow. Existing Pilots keep their phase names.
+
+**Phase triggers** are observable: a deployment, a store status, a user count read from a Source, a passing Check. Never a date, never "feels ready", and never a research deliverable such as "ten interviews completed". Research is a task someone may choose to do; it is not a gate. A trigger that cannot be checked by command is written as `manual — <evidence that would satisfy it>` and does not pause anything.
 
 ---
 
 ## Mode Detection
 
-Before doing anything, determine which mode to run:
+| Signal | Mode |
+|--------|------|
+| Pilot exists; session start, dispatched task, "what should I work on" | **Orient** |
+| Pilot exists; the project's queue is empty, "what's next", "pour" | **Pour** |
+| Pilot exists; merges or releases landed, scheduled run, "milestone done", "log shipped" | **Reconcile** |
+| Pilot exists; ACTIVE finished with no detailed next milestone, or a human changed direction | **Replan** |
+| No `PRODUCT_PILOT.md` anywhere in the project | **Setup** |
 
-| Signal | Mode | What you'll do |
-|--------|------|---------------|
-| Pilot exists AND user wants context / is starting a session | **Context** | Read pilot → produce brief orientation |
-| Pilot exists AND user mentions changes, completion, or updates | **Update** | Ask what changed → update relevant docs |
-| No pilot anywhere in the project | **Setup** | Interview → generate docs |
-| User explicitly says "set up" or "bootstrap" | **Setup** | Interview → generate docs (even if pilot exists) |
-
-**Context mode is the most common.** When the pilot exists and the user says "start of session" or asks what to work on, run Context mode — not Setup, not Update.
-
----
-
-## Context Mode (session start — fastest path)
-
-Run when `PRODUCT_PILOT.md` exists and no setup or update is requested.
-
-If there is no pilot yet, fall through to **Setup mode** instead.
-
-### Step 1: Read and locate
-Read `PRODUCT_PILOT.md`. Find the `← ACTIVE` or `<- ACTIVE` milestone.
-
-### Step 2: Synthesize a brief orientation
-Report (under 150 words):
-- **Phase** — current phase name and goal
-- **Active milestone** — name, unchecked `[ ]` tasks, completion signal
-- **Top blocker** — from the bulletized "What's Blocking Ship" section (name the blocker, what unblocks it, owner)
-- **Recent shipped count** — number of items in the Recent Shipped section since its heading date
-- **Metrics at risk** — any metric where Current is significantly below Target (flag these; skip metrics that are "Pre-launch")
-- **Pending decisions** — count of rows in Decision Pending; flag any older than 30 days
-
-### Step 3: Freshness checks (run in order, stop at first applicable)
-1. Compare `<!-- Last commit captured: HASH -->` against `git rev-parse --short HEAD`. If they differ by more than 10 commits → flag: "The Pilot's last commit anchor is X commits behind HEAD — Recent Shipped is stale. Run the regenerate command before proceeding."
-2. If `<!-- Last updated: -->` is more than 30 days old → flag: "The Pilot is X days stale — consider a review after this session."
-3. If every task in `← ACTIVE` is checked `[x]` → prompt: "Milestone [X] looks complete. Should we advance `← ACTIVE` to the next milestone?"
-4. If PRODUCT_PILOT.md is over 140 lines → note: "The Pilot has grown past 140 lines — operational detail may need moving to a supporting doc."
-5. If the Pilot includes a Product Docs Index and any `Last reviewed` date is more than 30 days old → flag: "[DOC] hasn't been reviewed in over 30 days. Consider updating it this session or scheduling a review."
-
-### Step 4: Connect to current task
-If the user's task aligns with the active milestone, say so. If it diverges, note the divergence briefly and offer to log it at session end via Update mode.
-
-**That's it.** No questions, no doc generation. Switch to Update mode if the user wants to log changes.
+Find the Pilot at `docs/product/PRODUCT_PILOT.md`, `docs/PRODUCT_PILOT.md`, or by `git ls-files`. Use its directory as `{PRODUCT_DOCS}`.
 
 ---
 
-## Update Mode
+## Orient
 
-If a `PRODUCT_PILOT.md` file exists anywhere in the project (check `{PRODUCT_DOCS}`, or search for it), run this section. Use its location as `{PRODUCT_DOCS}`.
+Fast path. No questions, no edits.
 
-**Shortcut:** If this is a periodic review with no specific changes → skip to the Periodic Review checklist at the bottom of this section.
+1. Run `scripts/pilot-banner.sh` from the repo root. Without the scripts, read the Pilot and report the same items: product line, phase, blockers, the ACTIVE milestone and its open tasks, decisions past deadline, runway, staleness.
+2. State whether the current task sits under the ACTIVE milestone. If it diverges, say so in one line and proceed.
+3. `STALE` in the banner means Recent Shipped is behind reality: run Reconcile as a dry run before citing shipped work.
+4. `STARVED` means no open ACTIVE task and nothing pourable: switch to Pour, and if Pour finds nothing, report to the Owner.
+5. Never ask "should we advance the milestone?" Advancement is Reconcile's job and runs on evidence.
 
-### What changed? (ask the user)
-
-1. Did you complete any milestones or tasks since the last update?
-2. Are you moving to a new phase, or staying in the current one?
-3. Do you have updated metric values (actual numbers replacing Pre-launch / TBD)?
-4. New milestones, features, or priorities to add?
-5. Anything new in the competitive landscape?
-
-If nothing changed and the user wants a periodic review → skip to the Periodic Review checklist below.
-
-### What to update
-
-| Change type | Files to update | What to do |
-|-------------|----------------|------------|
-| Milestone completed | PRODUCT_PILOT.md + ROADMAP.md | Check off items, advance `← ACTIVE` to next milestone. In PRODUCT_PILOT.md, move the completed milestone summary into the Recent Shipped section if Pilot length is above 140 — full detail lives in ROADMAP.md. |
-| Phase transition | PRODUCT_PILOT.md + ROADMAP.md | Move `← ACTIVE` to first milestone of new phase, update "Current phase" and the next-transition row |
-| Metrics refresh | PRODUCT_PILOT.md + METRICS_AND_OKRS.md | Replace Pre-launch/TBD with actual values in both files; verify both agree |
-| New milestone | ROADMAP.md first, then PRODUCT_PILOT.md | Add to correct phase with checklist + completion signal |
-| Competitive update | COMPETITIVE_LANDSCAPE.md | Add/update competitor entry; refresh differentiator if positioning shifted |
-| Feature shipped | FEATURE_INVENTORY.md + Pilot Recent Shipped | Add feature card with status, problem, solution, key metric; add a short_hash + one-line summary to Recent Shipped |
-| New blocker / unblock | PRODUCT_PILOT.md | Update "What's Blocking Ship" — bulletized only, never prose paragraphs. Each blocker needs unblock condition, owner, since-date |
-| Aging proposal | PRODUCT_PILOT.md | Add row to Decision Pending with owner + since-date. If a row sits there >30 days, force a kill or schedule decision |
-| Harness limitation found | PRODUCT_PILOT.md Open Tooling Gaps | Acknowledge enforcement gaps explicitly rather than silently relying on agent compliance |
-| Pilot over 140 lines | PRODUCT_PILOT.md | Move operational detail (commit hashes inside milestones, sub-task tracking, full transition tables) to supporting docs |
-
-Always update `<!-- Last updated: -->` AND `<!-- Last commit captured: -->` in the Pilot header whenever you edit it. Update `<!-- Last reviewed: -->` in any sister doc you modify, and reflect the new date in the Pilot's Product Docs Index `Last reviewed` column.
-
-### Expanding Scope
-
-If supporting docs are missing and you want to add them (e.g., upgrading from Micro to Lite or Full):
-
-1. Check which docs from the Step 4 table are missing in `{PRODUCT_DOCS}`
-2. Run the relevant interview questions for the missing docs (see scope table at top)
-3. Generate only the missing docs using Step 4
-4. Update the Product Docs Index in PRODUCT_PILOT.md to include the new docs
-
-### Periodic Review (monthly, or when Last reviewed >30 days old)
-
-- [ ] PRODUCT_OVERVIEW.md: Product description still accurate? Principles shifted?
-- [ ] COMPETITIVE_LANDSCAPE.md: New entrants, pivots, or pricing changes?
-- [ ] METRICS_AND_OKRS.md: Set new quarterly OKRs; retire stale metrics
-- [ ] ROADMAP.md: Re-evaluate upcoming items; remove items no longer relevant
-- [ ] All files: Update `<!-- Last reviewed: -->` dates
+Output stays under 25 lines. A dispatcher pastes this output into every task packet; see the Dispatcher block in `references/AGENT_INSTRUCTION_REFERENCE.md`.
 
 ---
 
-## Setup Mode
+## Pour
 
-Run when no `PRODUCT_PILOT.md` exists, or when the user explicitly requests setup.
+Run when the project's tracker shows nothing ready for this project. Pour turns roadmap tasks into tickets; it never invents work.
 
-**`{PRODUCT_DOCS}` convention:** This skill uses `{PRODUCT_DOCS}` as a variable for the product docs directory path. Step 0 resolves this to an actual path (e.g., `docs/product/`). Substitute the resolved path everywhere you see `{PRODUCT_DOCS}`.
+1. List tasks tagged `[unpoured]` under the ACTIVE milestone, then under the next milestone.
+2. For each task create one ticket in the tracker the repo already uses (Beads `bd`, Linear, GitHub Issues; the repo's instruction file says which). Title: the task text. Body: milestone name, Completion signal, and the milestone `Check` as acceptance. Labels: the repo's convention.
+3. Replace `[unpoured]` with the ticket ID in the Pilot. The Owner persona lands this by PR; an agent that is the Owner edits directly.
+4. Dispatch the tickets through the normal queue.
+5. Nothing pourable: do not manufacture tasks. Report starvation to the Owner, naming the next sketched milestone. The Owner runs Replan.
 
-**Output format:** All generated files are markdown (`.md`) — structured, parseable, and readable by both humans and machines.
-
-**Choose scope after Step 0 (not before).** Run the pre-setup audit first, then recommend a scope based on what you find:
-
-| What Step 0 found | Recommended scope |
-|-------------------|------------------|
-| No product docs, greenfield project | **Micro** (start small) or **Full** (if user has clear product context) |
-| README + code, no product docs | **Lite** (extract from README, generate 3 core docs) |
-| Some supporting docs exist | **Full** (fill gaps, synthesize into Pilot) |
-| Full supporting docs, no Pilot | **Pilot-only** (skip Step 4 entirely — just generate PRODUCT_PILOT.md) |
-
-Present your recommendation with reasoning: "Based on what I found, I'd recommend [scope] because [reason]. Want Full, Lite, or Micro instead?" Default to **Full** if the user has clear product context and wants everything.
-
-| Scope | What you get | Interview Qs | Time |
-|-------|-------------|--------------|------|
-| **Full** | Product Pilot + 6 supporting docs + reference block | All 12 | 15-20 min |
-| **Lite** | Product Pilot + PRODUCT_OVERVIEW + FEATURE_INVENTORY + ROADMAP + reference block | Q1-Q10 | 10-15 min |
-| **Micro** | Product Pilot + reference block only | Q1-Q8 | 5-10 min |
+Intake order for a dispatcher: human-filed tickets first, then confirmed bugs, then poured milestone tasks, then maintenance candidates. Poured tasks outrank dependency bumps and simplification sweeps because they move the product.
 
 ---
 
-## Step 0: Pre-Setup Audit
+## Reconcile
 
-Before starting, assess what exists. Run these checks:
+Evidence-driven maintenance. Runs after merges and releases, on a schedule, or when asked. No questions.
 
-### Resolve `{PRODUCT_DOCS}` path
+1. Run `scripts/pilot-reconcile.sh` and read the dry-run output: shipped count, ACTIVE Check result, open task count, phase transition Check, decisions due, runway.
+2. Tick tasks whose tickets are closed or whose PRs are merged. Verify in the tracker or `git log`, never from memory. The script does not know the tracker, so this step is yours.
+3. Run `scripts/pilot-reconcile.sh --apply`. It regenerates Recent Shipped from git, sets the anchor and date, and moves `← ACTIVE` to the next milestone when the Check passes and every task is ticked. It writes a Changelog line for the move.
+4. For each agent-tier decision past its Deadline: apply the Default to the thing it governs, move the row to the ROADMAP.md Decision Log with "default applied at deadline", and remove it from Decision Pending.
+5. Blockers: remove a blocker only with evidence (merged PR, passing build, deploy readback). Add a new one only if it stops a release, with a ticket.
+6. `phase transition: check=PASS` means the trigger holds: change the phase label, replace the Phase Transitions row with the next transition, add a Changelog line. Update which docs are maintained per the Phases table.
+7. `ADVANCE: … no next milestone` means the roadmap is exhausted: run Replan.
+8. Commit the Pilot with the evidence in the message. Land by PR when the repo requires it.
 
-Find where product docs should live. Check in this order:
-
-1. **Existing product docs directory** — Search for `PRODUCT_PILOT.md`, `PRODUCT_OVERVIEW.md`, `ROADMAP.md`, or similar product docs anywhere in the project. If found, use their parent directory.
-2. **Existing docs directory** — Look for `docs/`, `documentation/`, `doc/`, or similar top-level documentation directories. If one exists, use `{existing_docs_dir}/product/` (e.g., `documentation/product/`).
-3. **Default** — If no docs directory exists, use `docs/product/`.
-
-Once resolved, use this path as `{PRODUCT_DOCS}` for the rest of the setup. Tell the user: "I'll put product docs in `{resolved_path}` — does that work?"
-
-### Check the project structure
-
-```
-- Does `{PRODUCT_DOCS}` exist? If yes, check what's already there.
-- Does an agent instruction file exist? Look for: CLAUDE.md, AGENTS.md, .cursorrules,
-  .cursor/rules, or a system prompt file.
-- Does a README exist? It often contains product context to extract.
-- Is there a git history? Recent commits reveal what the team is working on.
-- Are there existing product docs (PRDs, roadmaps, OKRs) anywhere in the repo?
-```
-
-### Determine starting point
-
-| What exists | Approach |
-|-------------|----------|
-| Nothing — greenfield project | Full setup: interview + generate all docs from scratch (count depends on scope) |
-| README + code, no product docs | Audit-first: extract context from README and code, then fill gaps via interview |
-| Some product docs exist | Gap analysis: check which of the 6 supporting docs exist, create missing ones, build Product Pilot on top |
-| Full product docs, no Product Pilot | Pilot-only: synthesize existing docs into a PRODUCT_PILOT.md + add agent instruction reference |
-| User doesn't know metrics | Use phase-based suggestions from Q6 table for metric names only; mark unknown targets as `[TODO: add target]` |
-| Multiple active workstreams | Pick ONE as the active milestone; consider if they should be sequential milestones |
-| All metrics are "pre-launch" | Ask for targets; if the user does not provide them, mark targets as `[TODO: add target]` and let the agent fill actual values post-launch |
-| CLAUDE.md has embedded product info | Move it into the Pilot and supporting docs; the reference block replaces it |
-| Not ready for all 6 supporting docs | Start with at least 3: PRODUCT_OVERVIEW, FEATURE_INVENTORY, ROADMAP; update the Pilot index accordingly |
+When a human is present and something is ambiguous, state the assumption in the commit body rather than asking.
 
 ---
 
-## Step 0.5: Pre-fill Pass
+## Replan
 
-Before asking questions, use Step 0 findings to pre-fill answers. For each question, check the source. If the answer is unambiguous → HIGH confidence: present it with "I found this — does it look right?" If partial/ambiguous → MEDIUM: present and ask for corrections. If no source → LOW: ask open-ended.
+Runs when the ACTIVE milestone is done and the next one is only a sketch, when a human changes direction, or when a human-tier decision was answered.
 
-Sources depend on the starting point from Step 0. Greenfield projects will default to LOW for most questions since no docs exist yet. Never reference a file that hasn't been created yet — only use sources that exist in the repo.
-
-| Q | Infer from | HIGH confidence when |
-|---|------------|---------------------|
-| Q1 | README, PRODUCT_OVERVIEW.md (if exists) | Clear 2-3 sentence description exists |
-| Q2 | README, USER_RESEARCH.md (if exists) | Named segments with pain points |
-| Q3 | ROADMAP.md `← ACTIVE`, git recency | Phase label + milestones exist |
-| Q4 | ROADMAP.md active milestone unchecked tasks | Incomplete tasks clearly stated |
-| Q5 | PRODUCT_OVERVIEW.md principles section | 3+ named principles listed |
-| Q6-Q7 | METRICS_AND_OKRS.md, PRODUCT_PILOT.md snapshot | 5 metrics with numeric targets |
-| Q8 | ROADMAP.md active phase milestones | Milestones with checklists exist |
-| Q9 | ROADMAP.md next phase section | 2+ milestones sketched |
-| Q10 | ROADMAP.md exit criteria, PRODUCT_PILOT.md transitions | Data-driven trigger sentence exists |
-| Q11-Q12 | COMPETITIVE_LANDSCAPE.md | 2+ competitors with strengths/weaknesses |
-
-Present all HIGH answers together first for bulk confirmation. Then work through MEDIUM answers one at a time. Then ask LOW questions open-ended.
+1. Detail the next milestone from the ROADMAP.md sketch: two to six tasks, each shippable in one pull request, each tagged `[unpoured]`; one `Check` command; one Completion signal.
+2. Ask a human at most three questions, and only if the repo, tracker, and ROADMAP do not already answer them: what ships next, what must be true before it can ship, what is off-limits. With no human present, write the proposal and add a Decision Pending row (Tier `human`, Default = the proposal, Deadline seven days out). Work starts on the proposal immediately.
+3. Do not add research tasks (interviews, surveys, competitor studies) unless the human asked for them in this exchange. An agent may do desk research inside a task; it does not become a task or a gate.
+4. Record the direction change in the ROADMAP.md Decision Log.
 
 ---
 
-## Step 1: Project Orientation Interview
+## Setup
 
-Ask only questions not resolved as HIGH confidence in the Pre-fill Pass. For MEDIUM answers, present the pre-filled value and ask for corrections. For HIGH answers already confirmed, skip entirely.
+Research-first. No interview. Produces a working Pilot from what exists.
 
-### Questions to ask
+### Step 0: Resolve `{PRODUCT_DOCS}`
 
-**Q1: What is your product?**
-Get a 2-3 sentence description. What does it do? Who is it for? What makes it different?
+Existing product docs directory, else `{existing docs dir}/product/`, else `docs/product/`. If the directory is gitignored, stop and report; the Pilot must be version-controlled.
 
-**Q2: Who are your target users?**
-Get 2-3 user segments. For each: who they are, their main pain point, what they need.
+### Step 1: Research the project
 
-**Q3: What phase are you in?**
-Present these options and ask the user to pick:
+Read, in this order, and stop when the draft can be filled: README and package manifests; routes, screens, Cloud Functions, or entry points; `git log --oneline -50`; existing product docs (PRD, roadmap, specs); the tracker if present (`bd ready`, Linear, GitHub Issues); store listing or website if the README links one; the web for the product category when search tools exist, for context only. Do not fabricate competitors, users, or numbers from this research. Record only what a source said.
 
-| Phase | Description | Typical signals |
-|-------|-------------|-----------------|
-| **Ideation** | Exploring the problem space | No code yet, researching users |
-| **MVP** | Building the minimum viable product | Core features in development |
-| **Launch** | Getting to market | Product built, preparing for release |
-| **Validate** | Proving product-market fit | Live with users, watching metrics |
-| **Monetize** | Generating revenue | Adding pricing, payments, conversion |
-| **Grow** | Scaling users and revenue | Acquisition channels, engagement features |
-| **Mature** | Optimizing and expanding | Platform expansion, new markets |
+### Step 2: Draft the Pilot (Lean scope)
 
-**Q4: What's blocking you right now?**
-Get the single biggest blocker or next thing that needs to happen.
+Fill `templates/PRODUCT_PILOT_TEMPLATE.md` and `templates/ROADMAP_TEMPLATE.md`:
 
-**Q5: What are your core product principles?**
-What 3-5 rules guide every product decision? If the user isn't sure, suggest from common patterns:
+| Field | Derive from |
+|-------|-------------|
+| Description | README; one to three sentences |
+| Phase | No deploy target found: Build. Deployed or listed, no user evidence: Launch. Metrics with real values: Traction. |
+| ACTIVE milestone | The smallest shippable slice evident in open work: open PRs, ready tickets, TODOs, the last ten commits |
+| Tasks | Two to six, one PR each, all `[unpoured]` unless a ticket already exists |
+| Check | A command the repo already has: a test target, a build, a deploy readback. None found: `manual — <evidence>` |
+| Blockers | Only what stops a release today, with a ticket if one exists |
+| Phase metric | One, with a Source command, only if the product already emits it. Otherwise "none until Launch" |
+| Decision Pending | D1 "Confirm product framing (agent-drafted)", Tier `human`, Default `proceed`, Deadline seven days out |
+| Owner | The persona or person who will land Pilot PRs |
 
-| Principle | Meaning |
-|-----------|---------|
-| Privacy first | Never share or sell user data; minimize collection |
-| Speed over features | A fast, simple tool beats a slow, feature-rich one |
-| Data-driven | Decisions backed by metrics, not opinions |
-| Accessibility by default | Works for all users, not just power users |
-| Transparency | Show users how/why decisions are made, not just the result |
-| Opinionated defaults | Make the right choice easy; don't overwhelm with options |
+Every `[PLACEHOLDER: …]` becomes real content or `[TODO: …]`. Nothing else survives.
 
----
+### Step 3: Wire it in
 
-## Step 2: Metrics & Milestones Interview
+Add the reference block from `references/AGENT_INSTRUCTION_REFERENCE.md` **inside** the section of the instruction file that dispatchers copy into task packets (a "Read first" block when one exists). Install `scripts/`, the SessionStart hook, the pre-commit guard, and the CI check from the same reference. Remove product context that now duplicates the Pilot.
 
-### Metrics questions
+### Step 4: Verify
 
-**Q6: What are your top 5 metrics?**
-If the user isn't sure, suggest a standard set based on their phase:
+Run `scripts/pilot-grep-checks.sh --ci`. It must exit 0. Run `scripts/pilot-banner.sh` and confirm the output is what a worker should read first.
 
-| Phase | Suggested metrics |
-|-------|-------------------|
-| MVP / Launch | DAU, first-action rate, core action completion, D7 retention, crash-free rate |
-| Validate | D7 retention, D30 retention, activation rate, core loop frequency, NPS/CSAT |
-| Monetize | Trial starts, free-to-paid conversion, MRR, churn rate, LTV |
-| Grow | MAU growth rate, organic %, referral rate, CAC, engagement depth |
+### Step 5: Hand off
 
-**Q7: What are your targets for each metric?**
-Get a target number for each. If pre-launch, note "Pre-launch" as the current value.
+With a human present, show the draft and take edits; ask at most five questions, only for fields still marked `[TODO]`: what the product is, who it is for, what ships next, what blocks shipping, where it deploys. Unattended, commit the draft with D1 open and continue; work starts on the ACTIVE milestone now.
 
-### Milestone questions
+### Full scope
 
-**Q8: For your current phase, what are the 2-4 things that need to happen (in order)?**
-These become milestones. Each milestone should be completable in 1-3 work sessions.
-
-For each milestone, ask:
-- What specific tasks need to be done? (These become the checklist items)
-- How will you know it's done? (This becomes the completion signal)
-- Does it depend on a previous milestone? (This becomes the dependency)
-
-**Q9: What comes after this phase?**
-Sketch the next 1-2 phases with rough milestones. These don't need to be detailed yet.
-
-**Q10: What triggers moving to the next phase?**
-Get a data-driven condition, not a date. Examples: "App live on App Store,"
-"D7 retention above 25%," "First paying customer."
-
-### Good vs Bad Examples
-
-| Element | Bad | Good |
-|---------|-----|------|
-| Phase trigger | "End of Q2" / "When we feel ready" | "D7 retention >25% AND 100+ active users" |
-| Completion signal | "Feature is done" / "Looks good" | "Zero P0 bugs for 48 hours after deploy" |
-| Milestone scope | "Build the app" (too large) | "Stripe integration passing end-to-end test" (1-3 sessions) |
+Only on explicit request. Adds PRODUCT_OVERVIEW, FEATURE_INVENTORY, METRICS_AND_OKRS, USER_RESEARCH, and COMPETITIVE_LANDSCAPE from the templates, filled by research and marked `[TODO]` where sources are silent. Full scope never asks for interviews, survey scores, competitor pricing, or keyword volumes. Legacy Micro and Lite scopes are treated as Lean.
 
 ---
 
-## Step 3: Competitive Context (Quick)
+## File Contract (format 3.0)
 
-**Q11: Who are your top 2-3 competitors or alternatives?**
-For each: what they do, their key strength, their key weakness.
+- 140 lines or fewer. Detail lives in ROADMAP.md.
+- Exactly one `← ACTIVE` marker, at the end of the milestone line.
+- Every task line is `- [ ] [TICKET-ID] text` or `- [ ] [unpoured] text`. A task waiting on a decision ends with `(blocked-on D<n>)`.
+- Every milestone has `Check:` with one backticked command, or `manual — <evidence>`, and a Completion signal.
+- A milestone is two to six tasks; a task is one pull request. Split anything larger.
+- Blockers are bullets with unblock condition, owner, ticket, since-date. No prose paragraphs.
+- Decision Pending has seven columns: ID, Decision, Tier, Default, Deadline, Owner, Since. Empty reads `_No pending decisions._`.
+- Recent Shipped is regenerated; its heading carries the since-date and its comment names the Shipped paths.
+- Phase Transitions holds the next transition only, with a Check column.
+- Metrics Snapshot is optional before Traction. Each row has a Source. Pre-launch reads `_Pre-launch: no metrics tracked until first external users._`
+- Open Tooling Gaps names what is not enforced in this repo. Keep the section even when empty.
+- Product Docs Index appears in Full scope only.
+- Changelog is append-only and structural.
 
-**Q12: What's your key differentiator?**
-One sentence: why would someone choose your product over the alternatives?
-
----
-
-## Interview Edge Cases
-
-| Situation | How to handle |
-|-----------|---------------|
-| 0 competitors | Ask about alternatives (spreadsheets, manual processes, "doing nothing"). Every product competes with the status quo. |
-| Only 1 metric | Accept it. Use phase-based suggestions from Q6 to propose 2-4 more, but don't force 5. |
-| >4 milestones in current phase | Split into sub-phases or sequence into next phase. Each phase should have 2-4 milestones max. |
-| Only 1 milestone | Acceptable for Micro scope. For Full/Lite, probe for hidden dependencies ("what has to be true before that milestone is done?"). |
-| User gives date-based triggers | Reframe: "What metric or outcome would that date achieve?" Convert to data-driven triggers. |
-| Vague completion signals | Push for observable signals: deployments, metric thresholds, user counts, passing tests — not feelings. |
+`scripts/pilot-grep-checks.sh` enforces the checkable subset; `references/AUDIT_PROMPT_PACK.md` is an optional deep review for Full-scope Pilots before a phase transition.
 
 ---
 
-## Step 4: Generate the 6 Supporting Documents
+## Enforcement
 
-Create `{PRODUCT_DOCS}` if it doesn't exist. Read each template only when generating that specific document. For each:
+| Mechanism | Where it runs | What it guarantees |
+|-----------|---------------|--------------------|
+| `pilot-banner.sh` | SessionStart hook; pasted into dispatched task packets | Every session and every worker sees phase, blockers, ACTIVE tasks, runway |
+| `pilot-grep-checks.sh --pre-commit` | Git pre-commit | No structural defect lands; anchor cannot drift more than 20 commits without a Pilot edit |
+| `pilot-grep-checks.sh --ci` | Pull-request CI | Same contract for workers that run no local hooks |
+| `pilot-reconcile.sh --apply` | Scheduled job or post-merge step run by the Owner | Recent Shipped, anchor, and ACTIVE reflect git and the Checks |
 
-1. Read the template from this skill's `templates/` directory
-2. Fill in all `[PLACEHOLDER: ...]` markers using the interview answers from Steps 1-3
-3. For any placeholders you can't fill from the interview, make reasonable inferences
-   from the codebase (README, code structure, git history) or convert to a `[TODO: ...]` marker
-4. Save to `{PRODUCT_DOCS}`
-
-**Important:** All `[PLACEHOLDER: ...]` markers must be either replaced with real content or converted to `[TODO: ...]`. The only marker allowed in final output is `[TODO: ...]`. No `[PLACEHOLDER: ...]` should survive into the generated docs.
-
-**Scope adjustments:**
-- **Full:** Generate all 6 supporting docs
-- **Lite:** Generate only PRODUCT_OVERVIEW, FEATURE_INVENTORY, and ROADMAP (skip the other 3)
-- **Micro:** Skip Step 4 entirely — go straight to Step 5
-
-### Documents to generate (independent — any order, parallelizable)
-
-| File | Template | Primary source | Target length |
-|------|----------|----------------|---------------|
-| `PRODUCT_OVERVIEW.md` | `templates/PRODUCT_OVERVIEW_TEMPLATE.md` | Q1, Q2, Q5 | ~60-80 lines |
-| `FEATURE_INVENTORY.md` | `templates/FEATURE_INVENTORY_TEMPLATE.md` | Codebase audit | ~80-300 lines |
-| `COMPETITIVE_LANDSCAPE.md` | `templates/COMPETITIVE_LANDSCAPE_TEMPLATE.md` | Q11, Q12 | ~60-120 lines |
-| `METRICS_AND_OKRS.md` | `templates/METRICS_TEMPLATE.md` | Q6, Q7 | ~60-100 lines |
-| `USER_RESEARCH.md` | `templates/USER_RESEARCH_TEMPLATE.md` | Q2 | ~80-150 lines |
-| `ROADMAP.md` | `templates/ROADMAP_TEMPLATE.md` | Q3, Q4, Q8, Q9, Q10 | ~80-200 lines |
-
-### Parallel agent mode (optional — Full scope only)
-
-If the host supports parallel agents and the user has enabled or approved delegation, spawn 3 workers in parallel instead of generating docs sequentially. Create `{PRODUCT_DOCS}` first, then spawn:
-- **Product Strategist**: PRODUCT_OVERVIEW + COMPETITIVE_LANDSCAPE (Q1, Q2, Q5, Q11, Q12)
-- **Roadmap Engineer**: ROADMAP + METRICS_AND_OKRS (Q3, Q4, Q6-Q10)
-- **User Researcher**: USER_RESEARCH + FEATURE_INVENTORY (Q2 + code audit)
-
-Each worker prompt must include: full interview answers, template paths, target file paths, target lengths, and the placeholder rule. Lite scope (3 docs) rarely justifies delegation overhead — generate sequentially. After all workers complete, the lead proceeds to Step 5.
-
-### Feature inventory from codebase
-
-For the Feature Inventory, audit the codebase to discover features:
-
-- Check route definitions, view controllers, or page components
-- Look for API endpoints or Cloud Functions
-- Review the README for feature descriptions
-- Check git history for major feature additions
-- Group features into logical categories
-
-### Using PM skills (optional companions)
-
-These PM skills are optional companions — not required. If not installed, the templates are self-sufficient. When available, they produce higher-quality output:
-
-| Document | Skill to load |
-|----------|---------------|
-| `FEATURE_INVENTORY.md` | `feature-spec` |
-| `ROADMAP.md` | `roadmap-management` |
-| `METRICS_AND_OKRS.md` | `metrics-tracking` |
-| `USER_RESEARCH.md` | `user-research-synthesis` |
-| `COMPETITIVE_LANDSCAPE.md` | `competitive-analysis` |
-
----
-
-## Step 5: Create PRODUCT_PILOT.md
-
-This is the Product Pilot itself. Read `templates/PRODUCT_PILOT_TEMPLATE.md` and fill it in
-by synthesizing everything from Steps 1-4.
-
-### Question-to-section mapping
-
-| Product Pilot section | Fill from |
-|-------------|-----------|
-| Quick Orientation | Q1 (description), Q3 (phase), Q4 (blocker) |
-| Active Milestones | Q8 (current phase), Q9 (next phase sketched) |
-| Phase Transitions | Q10 (data-driven triggers) |
-| Metrics Snapshot | Q6 + Q7 (top 5 metrics with targets) |
-| Agent Operating Instructions | Use template as-is |
-| Product Docs Index | Use template as-is for Full/Lite; omit in Micro |
-
-### Critical rules
-
-- Keep the Pilot under 140 lines (filled). Move overflow to supporting docs.
-- Mark exactly ONE milestone as `← ACTIVE`
-- All phase transition triggers must be data-driven, not calendar-driven
-- No `[PLACEHOLDER: ...]` markers should remain in the final file
-- "What's Blocking Ship" must be bulletized — never prose. Each bullet: blocker / unblock condition / owner / since date
-- Phase Transitions table shows ONLY the next transition; full transition history lives in ROADMAP.md
-- Recent Shipped section has a regenerate command pinned in its HTML comment; update the heading date and `Last commit captured` header whenever you regenerate
-- Decision Pending and Open Tooling Gaps are required sections — keep them present even when empty (use placeholder text like "_No pending decisions._" or "_No known gaps._"). Empty sections force tenants to surface gaps; missing sections let gaps stay invisible.
-- Completed milestones can be summarized in Recent Shipped (full detail stays in ROADMAP.md as completed work)
-- The Pilot should be readable in under 2 minutes
-- **Lite scope:** Product Docs Index lists only the 3 generated docs (PRODUCT_OVERVIEW, FEATURE_INVENTORY, ROADMAP)
-- **Micro scope:** Omit the Product Docs Index section entirely. Decision Pending, Recent Shipped, and Open Tooling Gaps remain — they are not docs-index-dependent.
-
----
-
-## Step 6: Update the Agent Instruction File
-
-Read `references/AGENT_INSTRUCTION_REFERENCE.md` for the reference block to add.
-
-### Where to add it
-
-| File | Placement |
-|------|-----------|
-| `CLAUDE.md` | After user preferences, before engineering instructions |
-| `AGENTS.md` | In the main project instructions section |
-| `.cursorrules` | Near the top, after project description |
-| System prompt | At the beginning of project-specific instructions |
-
-### What to add
-
-The reference block should:
-- Frame the Pilot read as the agent's responsibility (not as a harness-enforced rule — there is no enforcement layer; see `TOOLING_GAPS.md`)
-- Tell the agent to read `{PRODUCT_DOCS}PRODUCT_PILOT.md` before starting work
-- Tell the agent to follow the Session End checklist when done
-- Reference PM skills if available
-- Point to `{PRODUCT_DOCS}` for deep context
-
-### What to remove
-
-If the agent instruction file already contains embedded product context (product descriptions,
-phase information, roadmap details, metric targets), remove it. The Pilot now owns that
-information. Keeping it in both places creates drift and confusion.
-
----
-
-## Verification Checklist
-
-After completing setup or any update, run BOTH the manual checklist and the deterministic grep-checks below. Manual review alone has been observed to return all-PASS on Pilots with critical defects (e.g., a gitignored docs directory). The grep-checks are the mandatory final gate.
-
-### Content quality
-
-- [ ] No `[PLACEHOLDER: ...]` markers remain in any file
-- [ ] Product Pilot has all required sections for the selected scope (Quick Orientation, Agent Operating Instructions, Active Milestones, Decision Pending, Recent Shipped, Phase Transitions, Metrics Snapshot, Open Tooling Gaps, Changelog; Product Docs Index is required for Full/Lite and omitted for Micro)
-- [ ] Exactly ONE milestone is marked `← ACTIVE`
-- [ ] All phase transition triggers are data-driven, not calendar-driven
-- [ ] Metrics have Target, Current, AND Category columns
-- [ ] Agent instruction file has the Product Pilot reference block
-- [ ] No duplicate product context in agent instruction file
-
-### Cross-references
-
-- [ ] Product Pilot references all 6 supporting docs by correct filename (Full scope)
-- [ ] ROADMAP milestones match Product Pilot milestones (no contradictions)
-- [ ] Metrics in Product Pilot snapshot match METRICS_AND_OKRS definitions (target AND current)
-- [ ] FEATURE_INVENTORY categories match codebase reality
-- [ ] `Last reviewed` dates in the Pilot's Product Docs Index match the `<!-- Last reviewed: -->` headers in each sister doc
-
-### Pilot Health Check
-
-- [ ] PRODUCT_PILOT.md is 140 lines or fewer (filled tenant Pilots)
-- [ ] "What's Blocking Ship" is bulletized — one bullet per blocker with unblock condition, owner, since date. Prose paragraphs are a structural defect.
-- [ ] No milestone has more than 10 tasks — if so, split into sub-milestones
-- [ ] No `← ACTIVE` milestone has all tasks checked (if all done, advance to next milestone)
-- [ ] Recent Shipped section heading date matches the regenerate command's `--since=` value
-- [ ] `Last commit captured` header matches a real commit and is within 10 commits of HEAD
-- [ ] Decision Pending and Open Tooling Gaps sections exist (even if empty with placeholder text)
-
-### Mandatory grep-check gate
-
-Run the deterministic grep-checks defined in `references/AUDIT_PROMPT_PACK.md` (section "Verification grep-checks"). They cover:
-
-1. Product docs directory must NOT be gitignored
-2. No `[PLACEHOLDER:]` markers survive
-3. Exactly one `← ACTIVE` marker
-4. `Last commit captured` references a real commit
-5. All required sections present for the selected scope
-6. Pilot under 140 lines
-
-Two prior verifier agents returning all-PASS does not substitute for these. If the grep-checks pass and a verifier returned all-PASS, run the **Challenge-all-positive gate** from the audit pack — verifier sycophancy is a known failure mode.
-
-### Optional but recommended: 5-angle audit
-
-For a complete review (especially before milestone advancement or phase transition), run all five angles from `references/AUDIT_PROMPT_PACK.md`: drift, coverage, structure, sister-doc consistency, session compliance. Each angle has its own prompt with anti-sycophancy quotas baked in.
+What this does not reach is listed in `TOOLING_GAPS.md`. Write the repo-specific gaps into the Pilot's Open Tooling Gaps section.
 
 ---
 
 ## Output Standards
 
-These rules apply whenever this skill generates content or reviews product state. They exist because the common failure modes in product doc work are sycophantic reviews and fabricated data — both of which produce documents that look good but actively mislead agents.
-
-**When reviewing milestone completeness or running a Periodic Review:**
-- Lead with what's stale, blocked, or below target — not with what's done
-- Check the completion signal criteria explicitly; "looks done" is not an assessment
-- Name issues specifically: "D7 retention at 18% vs 30% target" not "retention needs work"
-- A Periodic Review that finds nothing wrong is a sign you didn't look hard enough
-
-**When generating or updating product docs:**
-- Never invent metric targets — only use values the user provides; mark gaps as `[TODO: add target]`
-- Never fabricate competitor data, pricing, or feature comparisons — mark as `[TODO: research]`
-- Never invent commit hashes for `Last commit captured` or Recent Shipped entries — derive them from `git log` or `git rev-parse`
-- No `[PLACEHOLDER: ...]` marker may survive into final files — replace with real content or convert to `[TODO: ...]`
-- Don't infer completion signals from milestone names — ask if the user hasn't specified one
-- Don't round or approximate numbers: "28% retention" not "~30%"
-
-**When acknowledging gaps:**
-- Open Tooling Gaps must reflect the host harness honestly. If session-start reads are not enforced by a hook, the Pilot must say so. Never describe an unenforced rule as "mandatory."
-- If the host repo's `.gitignore` excludes the product docs directory, flag it as a critical gap — the Pilot is not version-controlled and every claim of audit/tracking is hollow.
+- Never invent metric values, targets, competitor facts, commit hashes, or ticket IDs. Use a Source, `git`, or the tracker; otherwise write `[TODO: …]`.
+- Never write a `Check` you did not run or cannot run from the repo root. Write `manual — <evidence>` instead.
+- No `[PLACEHOLDER: …]` survives into a generated file.
+- Do not round: "28%" not "about 30%".
+- In any review of a Pilot, lead with what is stale, blocked, or unverifiable. Do not use good, solid, clean, comprehensive, thorough, or "looks right".
+- Do not describe a rule as enforced unless a hook, a CI job, or a script enforces it in this repo.
 
 ---
 
-## Patterns Worth Adopting
+## Migrating a 2.x Pilot
 
-These patterns emerged from real-world Product Pilot deployments and produce better results:
+1. Run `scripts/pilot-grep-checks.sh --banner` and fix every FAIL: one ACTIVE, 140 lines, required sections.
+2. Tag every task `[TICKET-ID]` or `[unpoured]`.
+3. Add a `Check:` line to each milestone; use `manual — …` where no command exists yet.
+4. Convert Decision Pending to the seven columns. Give each row a Tier, a Default, and a Deadline.
+5. Replace the Metrics Snapshot Category column with Source. Drop rows without a Source or mark them `[TODO: source]`.
+6. Put `<!-- Shipped paths: … -->` under the Recent Shipped heading and run `scripts/pilot-reconcile.sh --apply`.
+7. Set `Owner` to a persona, add the Edit policy comment, bump `format version` to 3.0, add a Changelog line.
 
-- **Assumption validation tables** — In USER_RESEARCH.md, track assumptions as structured rows (Assumption / Validation method / Status) instead of freeform checklists. This makes it clear what's been tested, what hasn't, and how.
-- **Observable completion signals** — Every milestone should have a signal you can verify without subjectivity: a passing test, a metric threshold, a deployment, a user count. "Feels ready" is never a completion signal.
-- **RICE as default prioritization** — When the user has no preference, default to RICE (Reach, Impact, Confidence, Effort). It's simple, widely understood, and forces numeric thinking.
-- **Decision Log as living record** — The Decision Log in ROADMAP.md should be updated whenever priorities shift, not just at setup time. It becomes the project's institutional memory.
+The reconcile script already works on 2.2 files for Recent Shipped and the anchor. Automatic advancement needs the 3.0 task tags and Check lines.
 
 ---
 
-## Example: Filled-in Product Pilot (v2.2 structure, fictional product)
-
-The excerpt below shows the v2.2 sections in use. Section ordering and field formats are normative; the content is illustrative.
+## Example: Filled Pilot (format 3.0, fictional product)
 
 > ```
-> <!-- Product Pilot format version: 2.2 -->
-> <!-- Pilot scope: Full -->
-> <!-- Last updated: 2026-04-28 -->
+> <!-- Product Pilot format version: 3.0 -->
+> <!-- Pilot scope: Lean -->
+> <!-- Last updated: 2026-10-13 -->
 > <!-- Last commit captured: a3f9c12 -->
-> <!-- Owner: Priya R. -->
+> <!-- Owner: Product Leader -->
 > ```
 >
 > ## Quick Orientation
 >
-> **TaskFlow** is a collaborative task management app for small teams (3-15 people) that emphasizes async work and clear ownership.
+> **Ledgerlite** is a single-user expense tracker for freelancers. iOS, local storage, no account.
 >
-> **Current phase:** 1 — Validate
+> **Current phase:** 1 — Build
+> **Phase metric:** none until Launch — Source: `none`
 >
 > ### What's Blocking Ship
 >
-> - **Trial conversion below threshold** — Unblocked when: trial-to-paid >15% across 50+ trial starts. Owner: Priya. Since: 2026-04-10
-> - **Pricing model undecided** — Unblocked when: A/B test on trial length completes. Owner: Marcus. Since: 2026-04-15
->
-> ## Agent Operating Instructions
->
-> _(see template — used as-is)_
+> - **No signing certificate** — Unblocked when: a distribution certificate is installed on the CI runner. Owner: Shane. Ticket: LL-9. Since: 2026-10-10
 >
 > ## Active Milestones
 >
-> ### Phase 1: Validate
+> ### Phase 1: Build
 >
-> - **[1.3] Pricing Model & Trial Optimization** ← ACTIVE
->   - [ ] Run 3-week A/B test on trial length (7d vs 14d)
->   - [ ] Collect 50+ trial starts and measure conversion
->   - Completion signal: Trial-to-paid conversion >15%
+> - **[1.2] First export** ← ACTIVE
+>   - [x] [LL-4] CSV export of one month
+>   - [ ] [LL-7] Share sheet for the CSV
+>   - [ ] [unpoured] Empty-state copy when no expenses exist
+>   - Check: `xcodebuild test -scheme Ledgerlite -only-testing:ExportTests`
+>   - Completion signal: Export tests pass on CI
+>
+> - **[1.3] TestFlight build**
+>   - [ ] [unpoured] Bump version and archive on CI
+>   - Check: `manual — build visible in TestFlight`
+>   - Completion signal: First external tester installs
 >
 > ## Decision Pending
 >
-> | Decision | Owner | Since | Next step |
-> |----------|-------|-------|-----------|
-> | Annual vs monthly pricing default | Marcus | 2026-04-12 | Decide by 2026-05-15 or kill |
+> | ID | Decision | Tier | Default | Deadline | Owner | Since |
+> |----|----------|------|---------|----------|-------|-------|
+> | D1 | Export date format | agent | ISO 8601 | 2026-10-20 | Product Leader | 2026-10-13 |
 >
-> ## Recent Shipped (since 2026-04-15)
+> ## Recent Shipped (since 2026-10-01)
 >
-> - a3f9c12 Wire trial-length variant flag into onboarding
-> - 882ee0d Add trial-conversion analytics events
+> <!-- Shipped paths: Ledgerlite -->
+>
+> - a3f9c12 feat: CSV export of one month
 >
 > ## Phase Transitions
 >
-> | Transition | Trigger |
-> |-----------|---------|
-> | Phase 1 → 2 | D7 retention >30% AND trial-to-paid >15% |
+> | Transition | Trigger | Check |
+> |-----------|---------|-------|
+> | Build → Launch | App visible in TestFlight | `manual — TestFlight readback` |
 >
 > ## Metrics Snapshot
 >
-> | Metric | Category | Target | Current |
-> |--------|----------|--------|---------|
-> | D7 retention | Retention | >30% | 28% |
-> | Trial-to-paid conversion | Revenue | >15% | 12% |
-> | Task completion rate | Engagement | >2.5/user/day | 1.8 |
+> _Pre-launch: no metrics tracked until first external users._
 >
 > ## Open Tooling Gaps
 >
-> - No pre-commit hook enforces session-end doc updates; this Pilot relies on agent compliance.
->
-> ## Product Docs Index
->
-> | File | What's in it | Review cadence | Last reviewed |
-> |------|-------------|----------------|---------------|
-> | `ROADMAP.md` | Phased roadmap | Monthly | 2026-04-20 |
-> | `METRICS_AND_OKRS.md` | Metric definitions | Weekly | 2026-04-26 |
+> - No CI check on this repo yet; freshness relies on the pre-commit guard.
 >
 > ## Changelog
 >
-> - 2026-04-28 — Bumped to format version 2.2; added Decision Pending, Recent Shipped, Open Tooling Gaps
+> - 2026-10-13 — Migrated to format 3.0

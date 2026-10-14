@@ -1,0 +1,17 @@
+# Product Pilot structure check for pull requests.
+# Copy to .github/workflows/pilot-check.yml and adjust the scripts path.
+name: product-pilot
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "PRODUCT_PILOT.md"
+      - "scripts/pilot-*.sh"
+jobs:
+  pilot-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: sh scripts/pilot-grep-checks.sh --ci
