@@ -20,6 +20,8 @@ git clone https://github.com/shanemhamilton/product-pilot.git ~/.claude/skills/p
 git clone https://github.com/shanemhamilton/product-pilot.git ~/.codex/skills/product-pilot
 ```
 
+To pin a release instead of tracking main, add `--branch v3.0.0 --depth 1` to either clone. Releases: [github.com/shanemhamilton/product-pilot/releases](https://github.com/shanemhamilton/product-pilot/releases).
+
 Then, in the host repo, copy or symlink `scripts/` and wire the hooks and CI check from [`references/AGENT_INSTRUCTION_REFERENCE.md`](references/AGENT_INSTRUCTION_REFERENCE.md). Run `scripts/selftest.sh` once to prove the scripts work on your machine.
 
 ## Modes
