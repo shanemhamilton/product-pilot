@@ -12,6 +12,7 @@ A 2.2-era audit of one deployment found zero session-start invocations of the sk
 |-----------|-----------|---------|
 | The agent sees phase, blockers, ACTIVE tasks, decisions due, and runway before acting | `scripts/pilot-banner.sh` in a SessionStart hook; its output pasted into dispatched packets | `references/AGENT_INSTRUCTION_REFERENCE.md` sections 3 and 4 |
 | No structural defect lands: one ACTIVE marker, required sections, no placeholders, real anchor, 140 lines, tagged tasks | `scripts/pilot-grep-checks.sh --pre-commit` and `--ci` | Sections 4.3 and 5 |
+| No task is ticked without execution evidence (commit SHA, build number, receipt path, or CI run URL) | Same | Same |
 | The anchor cannot drift more than 20 commits without a Pilot edit | Same, pre-commit mode | Section 4.3 |
 | Recent Shipped matches git; the ACTIVE marker moves only when the Check passes and every task is ticked | `scripts/pilot-reconcile.sh --run-checks --apply` | Section 6 |
 | An empty queue refills from the roadmap instead of starving | `scripts/pilot-pour.sh --apply` run by the dispatcher or Owner | Dispatcher block, section 3 |

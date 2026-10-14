@@ -61,6 +61,7 @@ For a coordinator that builds queues and sends task packets to workers (a ticket
   repo. Beads by default, `--tracker gh` for GitHub Issues, `--tag N ID` after creating
   a ticket yourself in a tracker it cannot drive. It writes the IDs back; the Owner
   persona commits the Pilot by PR. Report `STARVED` to the Owner when nothing is pourable.
+  Pouring creates tickets; it never executes a stage or dispatches work on its own.
 - Reconcile after merges and releases, or once per cycle: the Owner persona runs
   `{SCRIPTS}pilot-reconcile.sh --run-checks --apply`, ticks tasks whose tickets closed, applies
   agent-tier decision Defaults past their Deadline, and lands the edit by PR.
