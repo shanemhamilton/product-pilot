@@ -28,7 +28,7 @@ Then, in the host repo, copy or symlink `scripts/` and wire the hooks and CI che
 |-----|------|--------------|
 | "what should I work on", a dispatched task, session start | **Orient** | `pilot-banner.sh` prints phase, blockers, ACTIVE tasks, decisions due, runway. No questions. |
 | "nothing ready", "pour the milestone", the queue is empty | **Pour** | `[unpoured]` tasks under the ACTIVE milestone become tracker tickets. |
-| merges or releases landed, "milestone done", a scheduled run | **Reconcile** | `pilot-reconcile.sh --apply` regenerates Recent Shipped, runs the Checks, advances ACTIVE on evidence, reports decisions past deadline. |
+| merges or releases landed, "milestone done", a scheduled run | **Reconcile** | `pilot-reconcile.sh --run-checks --apply` regenerates Recent Shipped, runs the Checks, advances ACTIVE on evidence, reports decisions past deadline. |
 | ACTIVE finished with only a sketch next, or direction changed | **Replan** | The next milestone is detailed from the roadmap. At most three questions, and only if the repo cannot answer them. |
 | no Pilot in the project | **Setup** | Research-first: the agent reads the repo, tracker, store listing, and web, drafts the Pilot, and starts work. No interview. |
 

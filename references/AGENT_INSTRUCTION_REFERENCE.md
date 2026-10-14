@@ -24,7 +24,7 @@ product choices are yours: decide, record one line, continue. If your task is no
 under the ACTIVE milestone, do it and note the divergence. Only the Pilot Owner
 edits the Pilot, by PR; never edit it from a task worktree.
 
-After merges or releases the Owner runs `{SCRIPTS}pilot-reconcile.sh --apply`.
+After merges or releases the Owner runs `{SCRIPTS}pilot-reconcile.sh --run-checks --apply`.
 When the queue is empty, pour `[unpoured]` tasks from the ACTIVE milestone into
 the tracker before falling back to maintenance work.
 ```
@@ -35,7 +35,7 @@ the tracker before falling back to maintenance work.
 Read {PRODUCT_DOCS}PRODUCT_PILOT.md before starting work. Work the ACTIVE milestone's
 open tasks first. Blockers and pending decisions stop releases, not tasks. Decide
 routine product choices yourself and record them. Do not edit the Pilot; its Owner
-does, by PR, after running {SCRIPTS}pilot-reconcile.sh --apply.
+does, by PR, after running {SCRIPTS}pilot-reconcile.sh --run-checks --apply.
 ```
 
 ### 2.3 One-line pointer for a sub-repository
@@ -61,7 +61,7 @@ For a coordinator that builds queues and sends task packets to workers (a ticket
   milestone, Completion signal, and Check. Write the ticket ID back to the Pilot
   through the Owner persona. Report `STARVED` to the Owner when nothing is pourable.
 - Reconcile after merges and releases, or once per cycle: the Owner persona runs
-  `{SCRIPTS}pilot-reconcile.sh --apply`, ticks tasks whose tickets closed, applies
+  `{SCRIPTS}pilot-reconcile.sh --run-checks --apply`, ticks tasks whose tickets closed, applies
   agent-tier decision Defaults past their Deadline, and lands the edit by PR.
 - The Pilot's "What's Blocking Ship" is the release blocker list. Do not keep a
   second list elsewhere; reference these entries by name.
@@ -121,7 +121,7 @@ The checkout needs full history (`fetch-depth: 0` on GitHub Actions) so the anch
 
 ## 6. Scheduling reconcile
 
-The skill does not schedule anything. Run `{SCRIPTS}pilot-reconcile.sh --apply` from whatever already runs on a cadence in the host: a nightly workflow, the coordinator's cycle, a post-merge job. The command is idempotent and writes only when something changed.
+The skill does not schedule anything. Run `{SCRIPTS}pilot-reconcile.sh --run-checks --apply` from whatever already runs on a cadence in the host: a nightly workflow, the coordinator's cycle, a post-merge job. The command is idempotent and writes only when something changed.
 
 ## 7. Notes for the Buzz desktop-app fleet (observed 2026-10-13)
 
