@@ -343,29 +343,29 @@
   <div class="wrap">
     <div class="section-head center reveal">
       <div class="eyebrow">The problem it solves</div>
-      <h2>Your agent forgets your product every session</h2>
-      <p>Without persistent context, every session starts with you re-explaining phase, roadmap, metrics, and blockers. Product Pilot writes it down once — in a file your agent can read when instructed or wired into your host workflow.</p>
+      <h2>Your agent rebuilds the picture every session</h2>
+      <p>A capable agent reconstructs a lot from the repo. It cannot see the blocker that lives in a certificate portal, the decision made in chat yesterday, or which of three plausible next steps you chose. Product Pilot writes those down once, in a file every session and every agent reads first.</p>
     </div>
     <div class="ba-grid">
       <div class="ba-card before reveal">
         <span class="tag">● Without Product Pilot</span>
-        <h3>You brief the agent. Again.</h3>
+        <h3>The agent reconstructs. Then guesses.</h3>
         <div class="chat">
           <div class="bubble you">Pick up where we left off on the export feature.</div>
-          <div class="bubble agent"><span class="muted">Which export feature? What's the priority right now, and is anything off-limits?</span></div>
-          <div class="bubble you">CSV export. Share sheet next. Don't touch the release, the signing certificate is still missing. I said all this yesterday.</div>
+          <div class="bubble agent"><span class="muted">Read the last 40 commits. CSV export landed Tuesday and the share sheet is half-wired. I'll finish the share sheet, then cut the release build, since the version bump is already on main.</span></div>
+          <div class="bubble you">Don't cut the release, the signing certificate is still missing. And we settled on ISO dates yesterday. None of that is in the code.</div>
         </div>
-        <p class="repeat">…and you say it again tomorrow, and the day after.</p>
+        <p class="repeat">Good reconstruction, wrong next step. Every session, every agent, differently.</p>
       </div>
       <div class="ba-card after reveal">
         <span class="tag">✓ With Product Pilot</span>
         <h3>The agent orients itself.</h3>
         <div class="chat">
           <div class="bubble you">What should I work on?</div>
-          <div class="bubble agent">Phase 1, Build. Active milestone <strong>[1.2] First export</strong>: LL-7 share sheet is next, one task still unpoured. Release is blocked on the signing certificate (LL-9); that's a release gate, not a work gate.</div>
-          <div class="bubble agent">Starting LL-7. When the queue runs dry I'll pour the unpoured task, and once it ships I'll update the plan.</div>
+          <div class="bubble agent">Phase 1, Build. Active milestone <strong>[1.2] First export</strong>: LL-7 share sheet is next. Release is blocked on the signing certificate (LL-9), a release gate, not a work gate. Export dates are ISO 8601, decided yesterday (D1).</div>
+          <div class="bubble agent">Starting LL-7, no release build. When the queue runs dry I'll pour the unpoured task, and once it ships I'll update the plan.</div>
         </div>
-        <p class="repeat">No re-briefing. It knows the milestone, the blocker, and what to do when the queue runs dry.</p>
+        <p class="repeat">Same repo, same model. The blocker and the decision were written down, so it read them.</p>
       </div>
     </div>
   </div>
