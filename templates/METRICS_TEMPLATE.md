@@ -1,79 +1,41 @@
-# [PLACEHOLDER: PRODUCT_NAME] — Metrics & OKRs
+# [PLACEHOLDER: PRODUCT_NAME] — Metrics
 
 <!-- Last reviewed: [PLACEHOLDER: DATE] -->
-<!-- Owner: [PLACEHOLDER: OWNER_NAME] -->
-<!-- Review cadence: Weekly (metrics), Quarterly (OKRs) -->
+<!-- Owner: [PLACEHOLDER: OWNER] -->
+
+## Rules
+
+- No metric without a Source: a command or query an agent can run to read the current value. A metric without one is `[TODO: source]`, never a number from memory.
+- Before Traction: at most one phase metric, and only if the product already emits it. Traction: one to three. Grow: add families as data exists.
+- Targets come from a human or stay `[TODO: target]`. OKRs are optional and exist only when a human sets them.
+- A value changes only when its Source was run; record the run in the review log.
+
+---
 
 ## Metric Definitions
 
-<!-- These 5 categories (AARRR) are a starting point. Omit categories that don't apply yet. For Lite scope, include only 2-3 categories. -->
+| Metric | Phase | Definition | Source (command or query) | Target | Current (date) |
+|--------|-------|------------|---------------------------|--------|----------------|
+| [PLACEHOLDER: METRIC] | [PLACEHOLDER: PHASE] | [PLACEHOLDER: ONE_SENTENCE] | `[PLACEHOLDER: COMMAND]` | [PLACEHOLDER: TARGET_OR_TODO] | [PLACEHOLDER: VALUE_OR_TODO] ([PLACEHOLDER: DATE]) |
 
-### Acquisition
-
-| Metric | Definition | Formula | Target |
-|--------|-----------|---------|--------|
-| [PLACEHOLDER: METRIC] | [PLACEHOLDER: DEFINITION] | [PLACEHOLDER: HOW_TO_CALCULATE] | [PLACEHOLDER: TARGET] |
-
-### Activation
-
-| Metric | Definition | Formula | Target |
-|--------|-----------|---------|--------|
-| [PLACEHOLDER: METRIC] | [PLACEHOLDER: DEFINITION] | [PLACEHOLDER: HOW_TO_CALCULATE] | [PLACEHOLDER: TARGET] |
-
-### Engagement
-
-| Metric | Definition | Formula | Target |
-|--------|-----------|---------|--------|
-| [PLACEHOLDER: METRIC] | [PLACEHOLDER: DEFINITION] | [PLACEHOLDER: HOW_TO_CALCULATE] | [PLACEHOLDER: TARGET] |
-
-### Retention
-
-| Metric | Definition | Formula | Target |
-|--------|-----------|---------|--------|
-| [PLACEHOLDER: METRIC] | [PLACEHOLDER: DEFINITION] | [PLACEHOLDER: HOW_TO_CALCULATE] | [PLACEHOLDER: TARGET] |
-
-### Revenue (if applicable)
-
-| Metric | Definition | Formula | Target |
-|--------|-----------|---------|--------|
-| [PLACEHOLDER: METRIC] | [PLACEHOLDER: DEFINITION] | [PLACEHOLDER: HOW_TO_CALCULATE] | [PLACEHOLDER: TARGET] |
+Suggested metrics by phase, each only if the product already emits it: Launch, store or deploy status and crash-free sessions; Traction, first-core-action rate and D7 return; Grow, retention by cohort and acquisition by channel.
 
 ---
 
-## Current OKRs — [PLACEHOLDER: QUARTER_AND_YEAR]
+## OKRs (optional, human-set)
 
-### O1: [PLACEHOLDER: OBJECTIVE_1]
+<!-- Omit this section until a human sets objectives. Do not draft OKRs on the product's behalf. -->
 
-| Key Result | Target | Current | Status |
-|-----------|--------|---------|--------|
-| [PLACEHOLDER: KR_1] | [PLACEHOLDER: TARGET] | [PLACEHOLDER: CURRENT] | [PLACEHOLDER: ON_TRACK_OR_AT_RISK] |
-| [PLACEHOLDER: KR_2] | [PLACEHOLDER: TARGET] | [PLACEHOLDER: CURRENT] | [PLACEHOLDER: ON_TRACK_OR_AT_RISK] |
-
-### O2: [PLACEHOLDER: OBJECTIVE_2]
-
-| Key Result | Target | Current | Status |
-|-----------|--------|---------|--------|
-| [PLACEHOLDER: KR_1] | [PLACEHOLDER: TARGET] | [PLACEHOLDER: CURRENT] | [PLACEHOLDER: ON_TRACK_OR_AT_RISK] |
-| [PLACEHOLDER: KR_2] | [PLACEHOLDER: TARGET] | [PLACEHOLDER: CURRENT] | [PLACEHOLDER: ON_TRACK_OR_AT_RISK] |
+| Objective | Key result | Source | Target | Current |
+|-----------|-----------|--------|--------|---------|
+| [PLACEHOLDER: OBJECTIVE] | [PLACEHOLDER: KR] | `[PLACEHOLDER: COMMAND]` | [PLACEHOLDER: TARGET] | [PLACEHOLDER: VALUE] |
 
 ---
 
-## Weekly Metrics Review Template
+## Review Log
 
-Use this each week to track progress:
+<!-- Append when a Current value changes. -->
 
-**Week of: ___________**
-
-| Metric | Target | This Week | Last Week | Trend | Notes |
-|--------|--------|-----------|-----------|-------|-------|
-| [PLACEHOLDER: TOP_METRIC_1] | | | | | |
-| [PLACEHOLDER: TOP_METRIC_2] | | | | | |
-| [PLACEHOLDER: TOP_METRIC_3] | | | | | |
-| [PLACEHOLDER: TOP_METRIC_4] | | | | | |
-| [PLACEHOLDER: TOP_METRIC_5] | | | | | |
-
-**Key observations:**
-- [What changed? What's concerning? What's encouraging?]
-
-**Actions for next week:**
-- [What will we do about what we observed?]
+| Date | Metric | Value | Source run |
+|------|--------|-------|------------|
+| [PLACEHOLDER: DATE] | [PLACEHOLDER: METRIC] | [PLACEHOLDER: VALUE] | `[PLACEHOLDER: COMMAND_AS_RUN]` |

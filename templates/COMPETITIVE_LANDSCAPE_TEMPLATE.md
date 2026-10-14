@@ -1,62 +1,30 @@
-# [PLACEHOLDER: PRODUCT_NAME] — Competitive Landscape
+# [PLACEHOLDER: PRODUCT_NAME] — Competitive Context
 
 <!-- Last reviewed: [PLACEHOLDER: DATE] -->
-<!-- Owner: [PLACEHOLDER: OWNER_NAME] -->
-<!-- Review cadence: Quarterly -->
+<!-- Owner: [PLACEHOLDER: OWNER] -->
 
-## Positioning Statement
+## Positioning
 
-[PLACEHOLDER: PRODUCT_NAME] is the [PLACEHOLDER: PRODUCT_CATEGORY] for [PLACEHOLDER: TARGET_USER] who need [PLACEHOLDER: CORE_VALUE]. Unlike [PLACEHOLDER: MAIN_COMPETITORS], we [PLACEHOLDER: KEY_DIFFERENTIATOR].
-
----
-
-## Competitive Set
-
-<!-- 2-5 competitors. If no direct competitors, list alternatives (spreadsheets, manual processes, doing nothing). -->
-
-| Competitor | What they do | Pricing | Key Strength | Key Weakness |
-|------------|-------------|---------|--------------|--------------|
-| [PLACEHOLDER: COMPETITOR_1] | [PLACEHOLDER: DESCRIPTION] | [PLACEHOLDER: PRICING] | [PLACEHOLDER: STRENGTH] | [PLACEHOLDER: WEAKNESS] |
-| [PLACEHOLDER: COMPETITOR_2] | [PLACEHOLDER: DESCRIPTION] | [PLACEHOLDER: PRICING] | [PLACEHOLDER: STRENGTH] | [PLACEHOLDER: WEAKNESS] |
-| [PLACEHOLDER: COMPETITOR_3] | [PLACEHOLDER: DESCRIPTION] | [PLACEHOLDER: PRICING] | [PLACEHOLDER: STRENGTH] | [PLACEHOLDER: WEAKNESS] |
+[PLACEHOLDER: PRODUCT_NAME] is the [PLACEHOLDER: CATEGORY] for [PLACEHOLDER: WHO] who need [PLACEHOLDER: CORE_VALUE]. Unlike [PLACEHOLDER: MAIN_ALTERNATIVE], it [PLACEHOLDER: DIFFERENCE].
 
 ---
 
-## Feature Comparison
+## Alternatives
 
-| Feature | [PLACEHOLDER: PRODUCT_NAME] | [PLACEHOLDER: COMPETITOR_1] | [PLACEHOLDER: COMPETITOR_2] | [PLACEHOLDER: COMPETITOR_3] |
-|---------|---|---|---|---|
-| [PLACEHOLDER: FEATURE_1] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] |
-| [PLACEHOLDER: FEATURE_2] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] |
-| [PLACEHOLDER: FEATURE_3] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] |
-| [PLACEHOLDER: FEATURE_4] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] | [PLACEHOLDER: YES_NO_PARTIAL] |
+<!-- Agent desk research. Two to five rows, including "doing it by hand" when that is the real alternative.
+     Pricing and feature cells are filled only from a source read today; otherwise [TODO]. -->
 
----
-
-## Competitive Moats
-
-<!-- Omit for early-stage projects where moats haven't formed yet. -->
-
-What makes [PLACEHOLDER: PRODUCT_NAME] defensible:
-
-1. **[PLACEHOLDER: MOAT_1_NAME]:** [PLACEHOLDER: WHY_ITS_HARD_TO_REPLICATE]
-2. **[PLACEHOLDER: MOAT_2_NAME]:** [PLACEHOLDER: WHY_ITS_HARD_TO_REPLICATE]
-3. **[PLACEHOLDER: MOAT_3_NAME]:** [PLACEHOLDER: WHY_ITS_HARD_TO_REPLICATE]
+| Alternative | What it does | Where we differ | Source |
+|-------------|-------------|-----------------|--------|
+| [PLACEHOLDER: NAME] | [PLACEHOLDER: ONE_SENTENCE] | [PLACEHOLDER: ONE_SENTENCE] | [PLACEHOLDER: URL_OR_TODO] |
+| [PLACEHOLDER: NAME] | [PLACEHOLDER: ONE_SENTENCE] | [PLACEHOLDER: ONE_SENTENCE] | [PLACEHOLDER: URL_OR_TODO] |
 
 ---
 
-## Competitive Risks
+## Risks Worth Watching
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| [PLACEHOLDER: RISK_1] | [PLACEHOLDER: HIGH_MED_LOW] | [PLACEHOLDER: HIGH_MED_LOW] | [PLACEHOLDER: HOW_TO_RESPOND] |
-| [PLACEHOLDER: RISK_2] | [PLACEHOLDER: HIGH_MED_LOW] | [PLACEHOLDER: HIGH_MED_LOW] | [PLACEHOLDER: HOW_TO_RESPOND] |
+<!-- Optional. A risk needs a signal that can be read, not a quarterly review. -->
 
----
-
-## App Store / Search Keywords (optional — omit if not a mobile/web app)
-
-| Keyword | Monthly volume | Difficulty | Our ranking |
-|---------|---------------|------------|-------------|
-| [PLACEHOLDER: KEYWORD_1] | [PLACEHOLDER: VOLUME] | [PLACEHOLDER: DIFFICULTY] | [PLACEHOLDER: RANK_OR_UNRANKED] |
-| [PLACEHOLDER: KEYWORD_2] | [PLACEHOLDER: VOLUME] | [PLACEHOLDER: DIFFICULTY] | [PLACEHOLDER: RANK_OR_UNRANKED] |
+| Risk | Signal to watch | Source |
+|------|-----------------|--------|
+| [PLACEHOLDER: RISK] | [PLACEHOLDER: OBSERVABLE_SIGNAL] | [PLACEHOLDER: URL_OR_COMMAND] |

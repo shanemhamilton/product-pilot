@@ -224,7 +224,7 @@
   .feat p { color: var(--muted); font-size: 14.5px; margin: 0; }
 
   /* ---------- Scope cards ---------- */
-  .scope-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 40px; }
+  .scope-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 40px; max-width: 760px; margin-left: auto; margin-right: auto; }
   .scope {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; position: relative;
   }
@@ -324,9 +324,9 @@
 <section class="hero">
   <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
   <div class="wrap hero-inner">
-    <span class="pill"><span class="dot"></span> v2.3 · works with Claude Code &amp; Codex</span>
+    <span class="pill"><span class="dot"></span> v3.0 · built for autonomous agent pipelines</span>
     <h1>Give your AI coding agent <span class="grad-text">product awareness</span>.</h1>
-    <p class="sub">Product Pilot bootstraps self-maintaining product docs for any project. Your agent learns what phase you're in, which milestone is active, and which metrics matter — so you stop repeating product context every single session.</p>
+    <p class="sub">One file per product, under 140 lines, that an agent reads before acting and a script keeps true. The queue refills from the roadmap, milestones advance on evidence, routine decisions resolve by default, and a human is asked only for what only a human can supply.</p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="#install">Get started</a>
       <a class="btn btn-ghost" href="https://github.com/shanemhamilton/product-pilot" target="_blank" rel="noopener">View on GitHub →</a>
@@ -373,14 +373,14 @@
   <div class="wrap modes-center">
     <div class="section-head center reveal">
       <div class="eyebrow">How it works</div>
-      <h2>Three modes, one source of truth</h2>
-      <p>The skill detects what you need and runs the right mode. Click through to see what each one actually does.</p>
+      <h2>Modes that run without you</h2>
+      <p>The skill detects the mode from what exists. Setup researches, Orient briefs, Pour refills the queue, Reconcile advances on evidence, Replan details the next milestone.</p>
     </div>
 
     <div class="modes-tabs reveal" role="tablist" aria-label="Product Pilot modes">
       <button class="active" data-mode="setup" role="tab" aria-selected="true">Setup</button>
-      <button data-mode="context" role="tab" aria-selected="false">Context</button>
-      <button data-mode="update" role="tab" aria-selected="false">Update</button>
+      <button data-mode="orient" role="tab" aria-selected="false">Orient</button>
+      <button data-mode="reconcile" role="tab" aria-selected="false">Reconcile</button>
     </div>
 
     <div class="terminal reveal">
@@ -393,30 +393,30 @@
         <!-- SETUP -->
         <div class="mode-panel active" data-panel="setup">
           <div class="line"><span class="pfx you">you ›</span><span class="txt">Set up a product pilot</span></div>
-          <div class="line"><span class="pfx">pilot ›</span><span class="txt">Quick interview — <span class="hl">12 questions</span> for Full scope.<br/><span class="dim">What does this product do? Who's it for? Current phase? Active milestone? Key metrics &amp; targets?…</span></span></div>
-          <div class="line"><span class="pfx ok">done ›</span><span class="txt">Generated <span class="hl">docs/product/</span> — Pilot + 6 supporting docs.</span></div>
-          <div class="line"><span class="pfx ok">done ›</span><span class="txt">Added a Product Pilot reference block to <span class="hl">CLAUDE.md</span> / <span class="hl">AGENTS.md</span>.</span></div>
-          <div class="mode-caption"><b>Setup</b> — a short interview becomes a full product documentation system, plus the instruction block that makes the session-start read the agent's responsibility. ~5–20 min depending on scope.</div>
+          <div class="line"><span class="pfx">pilot ›</span><span class="txt">Reading <span class="hl">README</span>, routes, git log, tracker, store listing…<br/><span class="dim">No interview. Unknowns become [TODO].</span></span></div>
+          <div class="line"><span class="pfx ok">done ›</span><span class="txt">Drafted <span class="hl">docs/product/PRODUCT_PILOT.md</span> + ROADMAP.md — phase Build, [1.1] ← ACTIVE, 4 tasks [unpoured].</span></div>
+          <div class="line"><span class="pfx ok">done ›</span><span class="txt">Wired the reference block, SessionStart hook, pre-commit guard, and CI check.</span></div>
+          <div class="mode-caption"><b>Setup</b> — research-first. The agent reads what exists, drafts a Lean Pilot, opens one human decision (confirm the framing, default: proceed), and starts on the ACTIVE milestone.</div>
         </div>
 
-        <!-- CONTEXT -->
-        <div class="mode-panel" data-panel="context">
-          <div class="line"><span class="pfx you">you ›</span><span class="txt">Read the product pilot</span></div>
-          <div class="line"><span class="pfx">pilot ›</span><span class="txt"><span class="dim">Reading PRODUCT_PILOT.md…</span></span></div>
-          <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Phase:</b> Validate &nbsp;·&nbsp; <b style="color:var(--cyan)">Milestone:</b> Trial conversion optimization <span class="hl">← ACTIVE</span></span></div>
-          <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Blocking ship:</b> D7 retention <span class="hl">28% vs 30%</span> target</span></div>
-          <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Recent shipped:</b> onboarding rewrite, paywall A/B</span></div>
-          <div class="mode-caption"><b>Context</b> — when asked to start from Product Pilot context, the agent reads the Pilot and produces a tight orientation: current phase, active milestone, what's blocking ship, what shipped recently, and which metrics are at risk.</div>
+        <!-- ORIENT -->
+        <div class="mode-panel" data-panel="orient">
+          <div class="line"><span class="pfx you">you ›</span><span class="txt">What should I work on?</span></div>
+          <div class="line"><span class="pfx">pilot ›</span><span class="txt"><span class="dim">$ scripts/pilot-banner.sh</span></span></div>
+          <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Phase:</b> Build &nbsp;·&nbsp; <b style="color:var(--cyan)">ACTIVE:</b> [1.2] First export <span class="hl">2 open · 1 unpoured</span></span></div>
+          <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Blocking ship:</b> no signing certificate (LL-9) — a release gate, not a work gate</span></div>
+          <div class="line"><span class="pfx ok">brief ›</span><span class="txt"><b style="color:var(--cyan)">Decision due:</b> D1 export date format → default ISO 8601</span></div>
+          <div class="mode-caption"><b>Orient</b> — the same 20 lines reach every session through a hook and every dispatched task through its packet. When the queue is empty, <b>Pour</b> turns [unpoured] tasks into tickets.</div>
         </div>
 
-        <!-- UPDATE -->
-        <div class="mode-panel" data-panel="update">
-          <div class="line"><span class="pfx you">you ›</span><span class="txt">We shipped the activation flow and hit our retention target</span></div>
-          <div class="line"><span class="pfx">pilot ›</span><span class="txt">What changed? <span class="dim">milestone status / metric / phase?</span></span></div>
-          <div class="line"><span class="pfx ok">edit ›</span><span class="txt">Updated <span class="hl">METRICS_AND_OKRS.md</span> — D7 retention 28% → <span style="color:var(--lime)">31%</span></span></div>
-          <div class="line"><span class="pfx ok">edit ›</span><span class="txt">Marked milestone complete in <span class="hl">ROADMAP.md</span>, advanced phase trigger.</span></div>
-          <div class="line"><span class="pfx ok">edit ›</span><span class="txt"><span class="dim">Left untouched: 5 docs with no relevant change.</span></span></div>
-          <div class="mode-caption"><b>Update</b> — when something ships or product state shifts, it asks what changed and edits <em>only</em> the relevant files, keeping the Pilot current without churn.</div>
+        <!-- RECONCILE -->
+        <div class="mode-panel" data-panel="reconcile">
+          <div class="line"><span class="pfx you">you ›</span><span class="txt">Reconcile the pilot</span></div>
+          <div class="line"><span class="pfx">pilot ›</span><span class="txt"><span class="dim">$ scripts/pilot-reconcile.sh --apply</span></span></div>
+          <div class="line"><span class="pfx ok">edit ›</span><span class="txt">Recent Shipped regenerated from git — <span class="hl">7 commits</span> since 2026-10-01</span></div>
+          <div class="line"><span class="pfx ok">edit ›</span><span class="txt">[1.2] Check <span style="color:var(--lime)">PASS</span>, all tasks ticked → ← ACTIVE moved to [1.3]</span></div>
+          <div class="line"><span class="pfx ok">edit ›</span><span class="txt"><span class="dim">D1 past deadline: default applied, logged in ROADMAP.md.</span></span></div>
+          <div class="mode-caption"><b>Reconcile</b> — evidence only: git for ships, a Check command for completion, ticket state for tasks. No "what changed?" question. <b>Replan</b> details the next milestone when the roadmap runs out.</div>
         </div>
 
       </div>
@@ -430,17 +430,17 @@
     <div class="section-head center reveal">
       <div class="eyebrow">What you get</div>
       <h2>A product brain, in plain markdown</h2>
-      <p>Full scope generates a Pilot plus six supporting docs — readable by humans, optimized for agents to read and maintain. No PDFs, no lock-in.</p>
+      <p>Lean scope is two files. Full scope adds five more, filled by agent research and marked <code>[TODO]</code> where sources are silent. Plain markdown, no lock-in.</p>
     </div>
     <div class="tree-card reveal">
       <div class="tree-head">{your-docs-dir}/product/</div>
-      <div class="tree-row pilot"><span class="fname"><span class="ic">◆</span>PRODUCT_PILOT.md</span><span class="fdesc">The main file your agent should read at session start</span></div>
-      <div class="tree-row"><span class="fname"><span class="ic">▸</span>PRODUCT_OVERVIEW.md</span><span class="fdesc">What the product is, who it's for, core principles</span></div>
-      <div class="tree-row"><span class="fname"><span class="ic">▸</span>FEATURE_INVENTORY.md</span><span class="fdesc">What's built, what's planned, feature status</span></div>
-      <div class="tree-row"><span class="fname"><span class="ic">▸</span>ROADMAP.md</span><span class="fdesc">Phased milestones with checklists and triggers</span></div>
-      <div class="tree-row"><span class="fname"><span class="ic">▸</span>METRICS_AND_OKRS.md</span><span class="fdesc">KPIs, targets, and quarterly objectives</span></div>
-      <div class="tree-row"><span class="fname"><span class="ic">▸</span>USER_RESEARCH.md</span><span class="fdesc">User segments, pain points, assumptions to validate</span></div>
-      <div class="tree-row"><span class="fname"><span class="ic">▸</span>COMPETITIVE_LANDSCAPE.md</span><span class="fdesc">Competitors, differentiators, positioning</span></div>
+      <div class="tree-row pilot"><span class="fname"><span class="ic">◆</span>PRODUCT_PILOT.md</span><span class="fdesc">Read first — phase, ACTIVE milestone, blockers, decisions, runway, under 140 lines</span></div>
+      <div class="tree-row"><span class="fname"><span class="ic">▸</span>ROADMAP.md</span><span class="fdesc">Every milestone's detail, decision log, done list</span></div>
+      <div class="tree-row"><span class="fname"><span class="ic">▸</span>PRODUCT_OVERVIEW.md</span><span class="fdesc">Full scope — what it is, who it's for, direction</span></div>
+      <div class="tree-row"><span class="fname"><span class="ic">▸</span>FEATURE_INVENTORY.md</span><span class="fdesc">Full scope — what's built, what's planned</span></div>
+      <div class="tree-row"><span class="fname"><span class="ic">▸</span>METRICS_AND_OKRS.md</span><span class="fdesc">Full scope — metrics with a Source command each</span></div>
+      <div class="tree-row"><span class="fname"><span class="ic">▸</span>USER_RESEARCH.md</span><span class="fdesc">Full scope — desk research with sources; interviews opt-in</span></div>
+      <div class="tree-row"><span class="fname"><span class="ic">▸</span>COMPETITIVE_LANDSCAPE.md</span><span class="fdesc">Full scope — alternatives with sources</span></div>
     </div>
   </div>
 </section>
@@ -456,8 +456,8 @@
     <div class="feat-grid">
       <div class="feat reveal">
         <div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 4 3 5-7"/></svg></div>
-        <h3>Data-driven phase triggers</h3>
-        <p>Phase transitions fire on observable metric signals, not calendar dates or vibes. "Looks ready" isn't an assessment.</p>
+        <h3>Observable phase triggers</h3>
+        <p>Phase transitions fire on a deployment, a store status, or a Source command — never a date, and never a research deliverable. A gate stops a release, not the queue.</p>
       </div>
       <div class="feat reveal">
         <div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg></div>
@@ -476,47 +476,39 @@
       </div>
       <div class="feat reveal">
         <div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.4-.7a2 2 0 1 1 3.5-2l.1.2"/></svg></div>
-        <h3>Open Tooling Gaps</h3>
-        <p>A required section — even when empty — so harness limitations get flagged instead of silently relying on agent compliance.</p>
+        <h3>Enforced by scripts, not promises</h3>
+        <p>A SessionStart banner, a pre-commit guard, and a CI check carry the contract. <code>TOOLING_GAPS.md</code> lists what they still cannot reach.</p>
       </div>
       <div class="feat reveal">
         <div class="ficon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
-        <h3>Multi-agent &amp; audit pack</h3>
-        <p>Tested with Claude Code and Codex, with an optional parallel generation mode and a 5-angle adversarial audit prompt pack.</p>
+        <h3>Built for fleets</h3>
+        <p>Dispatcher wiring: poured milestone tasks in the intake order, the banner in every packet, one Owner persona editing by PR, decisions with defaults and deadlines.</p>
       </div>
     </div>
 
     <!-- SCOPE CARDS -->
     <div class="section-head center reveal" style="margin-top:64px;">
       <div class="eyebrow">Pick your depth</div>
-      <h2>Three scope options</h2>
+      <h2>Two scope options</h2>
     </div>
     <div class="scope-grid">
       <div class="scope featured reveal">
-        <span class="badge">Most complete</span>
+        <span class="badge">Default</span>
+        <div class="scope-name">Lean</div>
+        <div class="scope-time">no interview · work starts the same session</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> PRODUCT_PILOT.md</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> ROADMAP.md</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Scripts, hooks, CI, and dispatcher wiring</li>
+        </ul>
+      </div>
+      <div class="scope reveal">
         <div class="scope-name">Full</div>
-        <div class="scope-time">12 questions · 15–20 min</div>
+        <div class="scope-time">on request · agent desk research, [TODO] where sources are silent</div>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Product Pilot file</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 6 supporting docs</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Agent instruction reference</li>
-        </ul>
-      </div>
-      <div class="scope reveal">
-        <div class="scope-name">Lite</div>
-        <div class="scope-time">10 questions · 10–15 min</div>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Product Pilot file</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 3 supporting docs</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Agent instruction reference</li>
-        </ul>
-      </div>
-      <div class="scope reveal">
-        <div class="scope-name">Micro</div>
-        <div class="scope-time">8 questions · 5–10 min</div>
-        <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Product Pilot file</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Agent instruction reference</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Everything in Lean</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Overview, feature inventory, metrics, users, competitive context</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Optional deep-review prompt pack</li>
         </ul>
       </div>
     </div>
@@ -604,7 +596,7 @@ rsync -a --checksum --exclude .git ./ ~/.codex/skills/product-pilot/</code></pre
       <a href="https://github.com/shanemhamilton/product-pilot/blob/main/SKILL.md" target="_blank" rel="noopener">Skill manual</a>
       <a href="https://github.com/shanemhamilton/product-pilot/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
     </div>
-    <div class="foot-meta">Built for Claude Code &amp; Codex · v2.3 · © Shane M. Hamilton</div>
+    <div class="foot-meta">Built for Claude Code &amp; Codex · v3.0 · © Shane M. Hamilton</div>
   </div>
 </footer>
 

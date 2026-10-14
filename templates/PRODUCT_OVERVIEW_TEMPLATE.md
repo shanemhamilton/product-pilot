@@ -1,52 +1,35 @@
 # [PLACEHOLDER: PRODUCT_NAME] — Product Overview
 
 <!-- Last reviewed: [PLACEHOLDER: DATE] -->
-<!-- Owner: [PLACEHOLDER: OWNER_NAME] -->
-<!-- Review cadence: Quarterly -->
-
-## Vision
-
-[PLACEHOLDER: VISION — 1-2 sentences describing the aspirational future state your product enables]
-
-## Mission
-
-[PLACEHOLDER: MISSION — 2-3 sentences describing how you deliver on the vision, what makes your approach distinctive]
+<!-- Owner: [PLACEHOLDER: OWNER] -->
 
 ## What [PLACEHOLDER: PRODUCT_NAME] Does
 
-[PLACEHOLDER: PRODUCT_DESCRIPTION — 3-4 sentences describing the core value. What does the user do? What does the product do in response? What's the outcome?]
+[PLACEHOLDER: THREE_SENTENCES — what the user does, what the product does in response, the outcome. Source: README or store listing.]
 
-## Target Users
+## Who It Is For
 
-**Primary:** [PLACEHOLDER: PRIMARY_SEGMENT — who they are, estimated size, defining characteristic]
+**Primary:** [PLACEHOLDER: ONE_SENTENCE — who, and the defining characteristic] — Source: [PLACEHOLDER: LINK_OR_TODO]
 
-**Secondary:** [PLACEHOLDER: SECONDARY_SEGMENT — who they are, why they're secondary]
+**Pain it removes:**
 
-**User pain points we solve:**
+- [PLACEHOLDER: PAIN_1]
+- [PLACEHOLDER: PAIN_2]
 
-- [PLACEHOLDER: PAIN_POINT_1]
-- [PLACEHOLDER: PAIN_POINT_2]
-- [PLACEHOLDER: PAIN_POINT_3]
-- [PLACEHOLDER: PAIN_POINT_4]
+## Direction
 
-## Product Principles
+**Vision:** [PLACEHOLDER: ONE_SENTENCE — the future state the product enables]
 
-1. **[PLACEHOLDER: PRINCIPLE_1_NAME].** [PLACEHOLDER: PRINCIPLE_1_DESCRIPTION — one sentence explaining why this guides your decisions]
+**Principles:** <!-- Two to four, and only ones that already decide trade-offs in this codebase. Omit the section if none exist yet. -->
 
-2. **[PLACEHOLDER: PRINCIPLE_2_NAME].** [PLACEHOLDER: PRINCIPLE_2_DESCRIPTION]
-
-3. **[PLACEHOLDER: PRINCIPLE_3_NAME].** [PLACEHOLDER: PRINCIPLE_3_DESCRIPTION]
-
-4. **[PLACEHOLDER: PRINCIPLE_4_NAME].** [PLACEHOLDER: PRINCIPLE_4_DESCRIPTION]
+1. **[PLACEHOLDER: PRINCIPLE_1].** [PLACEHOLDER: ONE_SENTENCE]
+2. **[PLACEHOLDER: PRINCIPLE_2].** [PLACEHOLDER: ONE_SENTENCE]
 
 ## Platform and Status
 
-- **Platform(s):** [PLACEHOLDER: PLATFORMS — e.g., iOS, Android, Web, API]
-- **Tech stack:** [PLACEHOLDER: KEY_TECHNOLOGIES — e.g., React, Firebase, PostgreSQL]
-- **Current status:** [PLACEHOLDER: STATUS — e.g., Pre-launch, Live, Growth phase]
-- **Website:** [PLACEHOLDER: URL]
+- **Platforms:** [PLACEHOLDER: iOS / Android / Web / API]
+- **Stack:** [PLACEHOLDER: KEY_TECHNOLOGIES]
+- **Status:** [PLACEHOLDER: Build / Launch / Traction / Grow / Mature]
+- **Where it runs:** [PLACEHOLDER: URL_STORE_OR_DEPLOY_TARGET]
 
-## Key Metrics
-
-See [METRICS_AND_OKRS.md](./METRICS_AND_OKRS.md) for metric definitions, targets, and OKRs.
-See [PRODUCT_PILOT.md](./PRODUCT_PILOT.md) for the current metrics snapshot and full docs index.
+See `PRODUCT_PILOT.md` for the ACTIVE milestone and blockers, and `METRICS_AND_OKRS.md` for metric definitions.
