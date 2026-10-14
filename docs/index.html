@@ -411,7 +411,7 @@
 
         <!-- RECONCILE -->
         <div class="mode-panel" data-panel="reconcile">
-          <div class="line"><span class="pfx you">you ›</span><span class="txt">Reconcile the pilot</span></div>
+          <div class="line"><span class="pfx you">you ›</span><span class="txt">We shipped it. Update the plan.</span></div>
           <div class="line"><span class="pfx">pilot ›</span><span class="txt"><span class="dim">$ scripts/pilot-reconcile.sh --apply</span></span></div>
           <div class="line"><span class="pfx ok">edit ›</span><span class="txt">Recent Shipped regenerated from git — <span class="hl">7 commits</span> since 2026-10-01</span></div>
           <div class="line"><span class="pfx ok">edit ›</span><span class="txt">[1.2] Check <span style="color:var(--lime)">PASS</span>, all tasks ticked → ← ACTIVE moved to [1.3]</span></div>
@@ -567,10 +567,11 @@ rsync -a --checksum --exclude .git ./ ~/.codex/skills/product-pilot/</code></pre
         <h3 style="font-size:22px; margin-bottom:16px;">Trigger it in plain language</h3>
         <p style="color:var(--muted); margin:0 0 8px;">In your AI coding agent, say any of:</p>
         <div class="say-list">
+          <span class="chip">What should I work on?</span>
+          <span class="chip">What's blocking us from shipping?</span>
+          <span class="chip">We're out of tickets. What's next?</span>
+          <span class="chip">We shipped it. Update the plan.</span>
           <span class="chip">Set up a product pilot</span>
-          <span class="chip">Create product context for my project</span>
-          <span class="chip">Make my agent product-aware</span>
-          <span class="chip">Read the product pilot</span>
         </div>
         <div style="margin-top:28px;">
           <a class="btn btn-primary" href="https://github.com/shanemhamilton/product-pilot" target="_blank" rel="noopener">Star on GitHub ★</a>
