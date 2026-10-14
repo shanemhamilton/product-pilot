@@ -7,19 +7,31 @@
 #   4. Reports decisions past their Deadline and the runway.
 #   5. Updates "Last commit captured" and "Last updated" (--apply).
 #
-# Checks are commands written in the Pilot by its Owner and run from the repo root.
-# Ticking tasks is left to the agent: a task is done when its ticket is closed, and
-# this script does not know the tracker. Usage: pilot-reconcile.sh [--apply] [--since YYYY-MM-DD]
+# Checks are shell commands written in the Pilot by its Owner. Because anyone who can
+# land a Pilot edit could plant one, they run only with --run-checks, and only when the
+# Pilot is identical to origin/main (the reviewed state) unless --trust-local is given.
+# Each command is printed before it runs. Ticking tasks is left to the agent: a task is
+# done when its ticket is closed, and this script does not know the tracker.
+# Usage: pilot-reconcile.sh [--apply] [--run-checks] [--trust-local] [--since YYYY-MM-DD]
 set -u
 trap "" PIPE  # a consumer that stops reading early (head, grep -q) must not abort the write step
 . "$(dirname "$0")/pilot-lib.sh"
 [ -f "${PILOT:-}" ] || { echo "no PRODUCT_PILOT.md found"; exit 0; }
-APPLY=0; SINCE=""
-while [ $# -gt 0 ]; do case "$1" in --apply) APPLY=1;; --since) SINCE="$2"; shift;; *) echo "usage: $0 [--apply] [--since DATE]" >&2; exit 2;; esac; shift; done
+APPLY=0; SINCE=""; RUN=0; TRUST=0
+while [ $# -gt 0 ]; do case "$1" in --apply) APPLY=1;; --run-checks) RUN=1;; --trust-local) TRUST=1;; --since) SINCE="$2"; shift;; *) echo "usage: $0 [--apply] [--run-checks] [--trust-local] [--since DATE]" >&2; exit 2;; esac; shift; done
 TIMEOUT=""; command -v timeout >/dev/null 2>&1 && TIMEOUT="timeout 120"; command -v gtimeout >/dev/null 2>&1 && TIMEOUT="gtimeout 120"
-run_check() { # $1 = command; prints PASS/FAIL and returns its status
+CHECKS_OK=0
+if [ "$RUN" = 1 ]; then
+  if [ "$TRUST" = 1 ]; then CHECKS_OK=1
+  elif ! git rev-parse -q --verify origin/main >/dev/null 2>&1; then echo "checks skipped: no origin/main to compare against (pass --trust-local to run anyway)"
+  elif ! git diff --quiet origin/main -- "$PILOT" 2>/dev/null; then echo "checks skipped: $PILOT differs from origin/main; land it first or pass --trust-local"
+  else CHECKS_OK=1; fi
+fi
+run_check() { # $1 = command; prints PASS/FAIL/skipped and returns its status
   [ -z "$1" ] && { echo "none"; return 2; }
   case "$1" in manual*) echo "manual"; return 2;; esac
+  [ "$CHECKS_OK" = 1 ] || { echo "skipped"; return 2; }
+  echo "running: $1" >&2
   if $TIMEOUT sh -c "$1" >/dev/null 2>&1; then echo PASS; return 0; else echo FAIL; return 1; fi
 }
 HEAD_SHORT=$(git rev-parse --short HEAD)
@@ -79,5 +91,5 @@ echo "runway: $(pilot_runway)"
 if [ "$APPLY" = 1 ]; then
   sed -e "s/Last commit captured: [^ >-]*/Last commit captured: $HEAD_SHORT/" -e "s/Last updated: [0-9-]*/Last updated: $TODAY/" "$TMP" > "$TMP.new" && mv "$TMP.new" "$TMP"
   cp "$TMP" "$PILOT"; echo "applied: anchor=$HEAD_SHORT updated=$TODAY ($PILOT)"
-else echo "dry run: no changes written (use --apply)"; fi
+else echo "dry run: no changes written (use --apply; add --run-checks to execute Checks)"; fi
 rm -f "$TMP" "$TMP.ship" "$TMP.new"

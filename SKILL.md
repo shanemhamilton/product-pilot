@@ -102,7 +102,7 @@ Evidence-driven maintenance. Runs after merges and releases, on a schedule, or w
 
 1. Run `scripts/pilot-reconcile.sh` and read the dry-run output: shipped count, ACTIVE Check result, open task count, phase transition Check, decisions due, runway.
 2. Tick tasks whose tickets are closed or whose PRs are merged. Verify in the tracker or `git log`, never from memory. The script does not know the tracker, so this step is yours.
-3. Run `scripts/pilot-reconcile.sh --apply`. It regenerates Recent Shipped from git, sets the anchor and date, and moves `← ACTIVE` to the next milestone when the Check passes and every task is ticked. It writes a Changelog line for the move.
+3. Run `scripts/pilot-reconcile.sh --run-checks --apply`. It regenerates Recent Shipped from git, sets the anchor and date, and moves `← ACTIVE` to the next milestone when the Check passes and every task is ticked. It writes a Changelog line for the move. Checks are shell commands from the Pilot, so they execute only with `--run-checks` and only when the Pilot is identical to `origin/main`; on an unmerged branch pass `--trust-local` knowingly or leave checks skipped.
 4. For each agent-tier decision past its Deadline: apply the Default to the thing it governs, move the row to the ROADMAP.md Decision Log with "default applied at deadline", and remove it from Decision Pending.
 5. Blockers: remove a blocker only with evidence (merged PR, passing build, deploy readback). Add a new one only if it stops a release, with a ticket.
 6. `phase transition: check=PASS` means the trigger holds: change the phase label, replace the Phase Transitions row with the next transition, add a Changelog line. Update which docs are maintained per the Phases table.
@@ -199,7 +199,7 @@ Only on explicit request. Adds PRODUCT_OVERVIEW, FEATURE_INVENTORY, METRICS_AND_
 | `pilot-banner.sh` | SessionStart hook; pasted into dispatched task packets | Every session and every worker sees phase, blockers, ACTIVE tasks, runway |
 | `pilot-grep-checks.sh --pre-commit` | Git pre-commit | No structural defect lands; anchor cannot drift more than 20 commits without a Pilot edit |
 | `pilot-grep-checks.sh --ci` | Pull-request CI | Same contract for workers that run no local hooks |
-| `pilot-reconcile.sh --apply` | Scheduled job or post-merge step run by the Owner | Recent Shipped, anchor, and ACTIVE reflect git and the Checks |
+| `pilot-reconcile.sh --run-checks --apply` | Scheduled job or post-merge step run by the Owner on the merged state | Recent Shipped, anchor, and ACTIVE reflect git and the Checks; Checks run only against a Pilot identical to `origin/main` |
 
 What this does not reach is listed in `TOOLING_GAPS.md`. Write the repo-specific gaps into the Pilot's Open Tooling Gaps section.
 
@@ -223,7 +223,7 @@ What this does not reach is listed in `TOOLING_GAPS.md`. Write the repo-specific
 3. Add a `Check:` line to each milestone; use `manual — …` where no command exists yet.
 4. Convert Decision Pending to the seven columns. Give each row a Tier, a Default, and a Deadline.
 5. Replace the Metrics Snapshot Category column with Source. Drop rows without a Source or mark them `[TODO: source]`.
-6. Put `<!-- Shipped paths: … -->` under the Recent Shipped heading and run `scripts/pilot-reconcile.sh --apply`.
+6. Put `<!-- Shipped paths: … -->` under the Recent Shipped heading and run `scripts/pilot-reconcile.sh --apply` (no Checks run without `--run-checks`).
 7. Set `Owner` to a persona, add the Edit policy comment, bump `format version` to 3.0, add a Changelog line.
 
 The reconcile script already works on 2.2 files for Recent Shipped and the anchor. Automatic advancement needs the 3.0 task tags and Check lines.

@@ -86,7 +86,7 @@ Optional. Use it for a Full-scope Pilot before a phase transition, or when a Pil
 >
 > 1. Is `scripts/pilot-banner.sh` wired into a SessionStart hook, and does the dispatcher paste its output into packets? Absent either, workers may never see the Pilot.
 > 2. Does a pre-commit hook run `pilot-grep-checks.sh --pre-commit`? Does CI run `--ci` on pull requests? A repo with neither has no structural guarantee.
-> 3. Is `pilot-reconcile.sh --apply` scheduled or run post-merge by the Owner? If nothing runs it, Recent Shipped and the ACTIVE marker drift.
+> 3. Is `pilot-reconcile.sh --run-checks --apply` scheduled or run post-merge by the Owner? If nothing runs it, Recent Shipped and the ACTIVE marker drift.
 > 4. Does the instruction file carry the reference block inside the section that packets copy? A pointer outside that section is a defect.
 > 5. Is the product docs directory gitignored? If yes, every claim of tracking is hollow.
 > 6. Does the Pilot's Open Tooling Gaps section name each gap found above? If a gap exists and the section is silent, that is a defect.

@@ -39,7 +39,7 @@ Tasks tagged `[unpoured]` under ACTIVE, then under the next milestone, are poura
 
 ### Reconcile (after merges and releases, or on a schedule)
 
-Run `scripts/pilot-reconcile.sh --apply`. It regenerates Recent Shipped, updates the anchor, runs each `Check`, and reports overdue decisions and runway. Then tick tasks whose tickets are closed, let the script advance `← ACTIVE` when the milestone Check passes, apply the Default of any agent-tier decision past its Deadline, and log it in `ROADMAP.md`.
+Run `scripts/pilot-reconcile.sh --run-checks --apply` on the merged state. It regenerates Recent Shipped, updates the anchor, runs each `Check` (only when this file matches `origin/main`), and reports overdue decisions and runway. Then tick tasks whose tickets are closed, let the script advance `← ACTIVE` when the milestone Check passes, apply the Default of any agent-tier decision past its Deadline, and log it in `ROADMAP.md`.
 
 ### Decide
 

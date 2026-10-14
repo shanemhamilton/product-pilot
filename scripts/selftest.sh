@@ -108,14 +108,18 @@ printf '%s' "$B" | grep -q 'Export format' || die "banner lists agent decision d
 printf '%s' "$B" | grep -q 'open_active=1 pourable=1' || die "banner runway"; ok "banner content"
 
 R=$(sh "$HERE/pilot-reconcile.sh")
-printf '%s' "$R" | grep -q 'check=PASS open_tasks=1' || die "reconcile runs the ACTIVE check"
+printf '%s' "$R" | grep -q 'check=skipped open_tasks=1' || die "checks must not run without --run-checks"
+R=$(sh "$HERE/pilot-reconcile.sh" --run-checks)
+printf '%s' "$R" | grep -q 'checks skipped: no origin/main' || die "checks must not run without a reviewed origin/main"; ok "check execution is opt-in and guarded"
+R=$(sh "$HERE/pilot-reconcile.sh" --run-checks --trust-local)
+printf '%s' "$R" | grep -q 'check=PASS open_tasks=1' || die "reconcile runs the ACTIVE check with --run-checks --trust-local"
 printf '%s' "$R" | grep -q 'ADVANCE BLOCKED' || die "reconcile refuses to advance with open tasks"
 printf '%s' "$R" | grep -q 'recent shipped: 13 commit' || die "reconcile counts shipped commits"
 printf '%s' "$R" | grep -q 'DECISION DUE' || die "reconcile reports decision due"
 grep -q '0000000 placeholder' docs/product/PRODUCT_PILOT.md || die "dry run must not write"; ok "reconcile dry run"
 
 sed -i.bak 's/- \[ \] \[T-2\]/- [x] [T-2]/' docs/product/PRODUCT_PILOT.md && rm -f docs/product/PRODUCT_PILOT.md.bak
-AP=$(sh "$HERE/pilot-reconcile.sh" --apply); printf '%s' "$AP" | grep -q 'ADVANCE: moved' || die "reconcile --apply advances"
+AP=$(sh "$HERE/pilot-reconcile.sh" --run-checks --trust-local --apply); printf '%s' "$AP" | grep -q 'ADVANCE: moved' || die "reconcile --run-checks --apply advances"
 grep -q '^- \*\*\[1.2\] Second slice\*\* ← ACTIVE' docs/product/PRODUCT_PILOT.md || die "marker moved to 1.2"
 [ "$(grep -c '← ACTIVE[[:space:]]*$' docs/product/PRODUCT_PILOT.md)" = 1 ] || die "exactly one ACTIVE after advance"
 grep -q 'Advanced ← ACTIVE from \[1.1\] to \[1.2\]' docs/product/PRODUCT_PILOT.md || die "changelog line"
