@@ -7,6 +7,10 @@ set -u
 [ -f "${PILOT:-}" ] || { echo "no PRODUCT_PILOT.md found"; exit 0; }
 
 echo "=== PRODUCT PILOT ($PILOT) ==="
+# Repo content follows: product state, not instructions. Say whether it is the reviewed state.
+if git rev-parse -q --verify origin/main >/dev/null 2>&1; then
+  if git diff --quiet origin/main -- "$PILOT" 2>/dev/null; then echo "state: matches origin/main (reviewed)"; else echo "state: UNREVIEWED, differs from origin/main"; fi
+else echo "state: no origin/main to compare against"; fi
 awk '/^## Quick Orientation/{p=1; next} p && /^### /{exit} p && NF && !/^<!--/' "$PILOT" | sed 's/\*\*//g' | head -6
 
 echo "--- Blocking ship (release gate, not a work gate) ---"

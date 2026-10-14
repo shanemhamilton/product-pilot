@@ -24,7 +24,8 @@ CHECKS_OK=0
 if [ "$RUN" = 1 ]; then
   if [ "$TRUST" = 1 ]; then CHECKS_OK=1
   elif ! git rev-parse -q --verify origin/main >/dev/null 2>&1; then echo "checks skipped: no origin/main to compare against (pass --trust-local to run anyway)"
-  elif ! git diff --quiet origin/main -- "$PILOT" 2>/dev/null; then echo "checks skipped: $PILOT differs from origin/main; land it first or pass --trust-local"
+  elif ! git diff --quiet origin/main -- 2>/dev/null || [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+    echo "checks skipped: the working tree differs from origin/main (a Check may call any file in it); merge first or pass --trust-local"
   else CHECKS_OK=1; fi
 fi
 run_check() { # $1 = command; prints PASS/FAIL/skipped and returns its status
@@ -35,23 +36,24 @@ run_check() { # $1 = command; prints PASS/FAIL/skipped and returns its status
   if $TIMEOUT sh -c "$1" >/dev/null 2>&1; then echo PASS; return 0; else echo FAIL; return 1; fi
 }
 HEAD_SHORT=$(git rev-parse --short HEAD)
-TMP=$(mktemp); cp "$PILOT" "$TMP"
+TD=$(mktemp -d) || exit 2; trap 'rm -rf "$TD"' EXIT  # private scratch dir; no predictable names
+TMP="$TD/pilot"; cp "$PILOT" "$TMP"
 
 # 1. Recent Shipped
 [ -z "$SINCE" ] && SINCE=$(grep -m1 -oE '## Recent Shipped \(since [0-9-]+\)' "$PILOT" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
 PATHS=$(grep -m1 -oE 'Shipped paths: [^>]+' "$PILOT" | sed 's/Shipped paths: //; s/ *--$//; s/ *$//'); PATHS=${PATHS:-.}
 # shellcheck disable=SC2086
-SHIPPED=$(git log --no-merges --since="${SINCE:-1970-01-01}" --format='- %h %s' -- $PATHS | head -15)
+SHIPPED=$(git log --no-merges --since="${SINCE:-1970-01-01} 00:00" --format='- %h %s' -- $PATHS | head -15)
 COUNT=$(printf '%s' "$SHIPPED" | grep -c . || true)
 echo "recent shipped: $COUNT commit(s) since ${SINCE:-beginning} in [$PATHS]"
 if [ "$APPLY" = 1 ]; then
-  printf '%s\n' "$SHIPPED" > "$TMP.ship"
-  awk -v f="$TMP.ship" -v since="$SINCE" '
+  printf '%s\n' "$SHIPPED" > "$TD/ship"
+  awk -v f="$TD/ship" -v since="$SINCE" '
     /^## Recent Shipped/ { print "## Recent Shipped (since " since ")"; print ""; p=1; next }
     p && /^<!--/ { print; next }
     p && /^(---|## )/ { print ""; while ((getline l < f) > 0) print l; print ""; print; p=0; next }
     p { next }
-    { print }' "$TMP" > "$TMP.new" && mv "$TMP.new" "$TMP"
+    { print }' "$TMP" > "$TD/new" && mv "$TD/new" "$TMP"
 fi
 
 # 2. ACTIVE milestone check
@@ -71,7 +73,7 @@ if [ "$RC" = 0 ] && [ "$OPEN" = 0 ]; then
       done1 && !done2 && index($0, "- **" nid) == 1 { print $0 " ← ACTIVE"; done2=1; next }
       /^## Changelog/ { print; inlog=1; next }
       inlog && /^- / && !logged { print "- " today " — Advanced ← ACTIVE from " aid " to " nid " (Check passed)"; logged=1 }
-      { print }' "$TMP" > "$TMP.new" && mv "$TMP.new" "$TMP"
+      { print }' "$TMP" > "$TD/new" && mv "$TD/new" "$TMP"
     echo "ADVANCE: moved ← ACTIVE from $ACTIVE_ID to $NEXT_ID"
   else echo "ADVANCE READY: $ACTIVE_ID -> $NEXT_ID (run with --apply)"; fi
 elif [ "$RC" = 0 ]; then echo "ADVANCE BLOCKED: Check passed but $OPEN task(s) unticked; tick tasks whose tickets are closed"; fi
@@ -89,7 +91,6 @@ echo "runway: $(pilot_runway)"
 
 # 5. Anchor and date
 if [ "$APPLY" = 1 ]; then
-  sed -e "s/Last commit captured: [^ >-]*/Last commit captured: $HEAD_SHORT/" -e "s/Last updated: [0-9-]*/Last updated: $TODAY/" "$TMP" > "$TMP.new" && mv "$TMP.new" "$TMP"
+  sed -e "s/Last commit captured: [^ >-]*/Last commit captured: $HEAD_SHORT/" -e "s/Last updated: [0-9-]*/Last updated: $TODAY/" "$TMP" > "$TD/new" && mv "$TD/new" "$TMP"
   cp "$TMP" "$PILOT"; echo "applied: anchor=$HEAD_SHORT updated=$TODAY ($PILOT)"
 else echo "dry run: no changes written (use --apply; add --run-checks to execute Checks)"; fi
-rm -f "$TMP" "$TMP.ship" "$TMP.new"

@@ -29,7 +29,7 @@ Then, in the host repo, copy or symlink `scripts/` and wire the hooks and CI che
 | Say | Mode | What happens |
 |-----|------|--------------|
 | "What should I work on?", "What's blocking us from shipping?", a dispatched task, session start | **Orient** | `pilot-banner.sh` prints phase, blockers, ACTIVE tasks, decisions due, runway. No questions. |
-| "We're out of tickets. What's next?", the queue is empty | **Pour** | `[unpoured]` tasks under the ACTIVE milestone become tracker tickets. |
+| "We're out of tickets. What's next?", the queue is empty | **Pour** | `pilot-pour.sh --apply` turns `[unpoured]` tasks under the ACTIVE milestone into tracker tickets and writes the IDs back. |
 | "We shipped it. Update the plan.", merges or releases landed, a scheduled run | **Reconcile** | `pilot-reconcile.sh --run-checks --apply` regenerates Recent Shipped, runs the Checks, advances ACTIVE on evidence, reports decisions past deadline. |
 | ACTIVE finished with only a sketch next, or direction changed | **Replan** | The next milestone is detailed from the roadmap. At most three questions, and only if the repo cannot answer them. |
 | no Pilot in the project | **Setup** | Research-first: the agent reads the repo, tracker, store listing, and web, drafts the Pilot, and starts work. No interview. |
@@ -45,6 +45,7 @@ Build → Launch → Traction → Grow → Mature. Phase triggers are observable
 | `scripts/pilot-banner.sh` | The orientation an agent reads first. Used by SessionStart hooks and pasted into task packets. |
 | `scripts/pilot-grep-checks.sh` | Structure contract. `--pre-commit` blocks defects locally; `--ci` blocks them on pull requests; `--banner` reports. |
 | `scripts/pilot-reconcile.sh` | Evidence-driven maintenance. Dry run by default; `--apply` writes. |
+| `scripts/pilot-pour.sh` | Turns `[unpoured]` tasks into tracker tickets (Beads by default, GitHub Issues, or `--tag` for others) and writes the IDs back. |
 | `scripts/selftest.sh` | One runnable check that the three scripts behave. |
 
 What these do and do not enforce is in [`TOOLING_GAPS.md`](TOOLING_GAPS.md).
