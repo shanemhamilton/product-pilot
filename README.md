@@ -6,7 +6,7 @@
 
 **[→ View the site](https://shanemhamilton.github.io/product-pilot/)**
 
-Product Pilot is an agent skill, tested with Claude Code and Codex, that gives a coding agent, or a fleet of them, the product context to keep shipping without a human in the loop. It maintains one file per product, `PRODUCT_PILOT.md`, under 140 lines: the phase, the ACTIVE milestone with ticket-tagged tasks and a runnable completion Check, what blocks a release, decisions with defaults and deadlines, recent ships taken from git, and how much runway the roadmap still holds. Three shell scripts keep the file true and feed it to every session and every dispatched task.
+Product Pilot is an agent skill, tested with Claude Code and Codex, that gives a coding agent, or a fleet of them, the product context to keep shipping with a human over the loop: the human sets direction and holds the gates, and is asked only for what only a human can supply. It maintains one file per product, `PRODUCT_PILOT.md`, under 140 lines: the phase, the ACTIVE milestone with ticket-tagged tasks and a runnable completion Check, what blocks a release, decisions with defaults and deadlines, recent ships taken from git, and how much runway the roadmap still holds. Three shell scripts keep the file true and feed it to every session and every dispatched task.
 
 Version 3.0 is built for zero-to-one. Until a product has external users, the skill asks for three things: what ships next, what blocks shipping, and where it deploys. Interviews, surveys, personas, competitor matrices, and OKRs are opt-in workstreams that unlock later, when a human turns them on.
 
