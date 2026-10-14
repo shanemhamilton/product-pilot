@@ -87,7 +87,7 @@ Output stays under 25 lines. A dispatcher pastes this output into every task pac
 Run when the project's tracker shows nothing ready for this project. Pour turns roadmap tasks into tickets; it never invents work.
 
 1. `scripts/pilot-pour.sh` lists the `[unpoured]` tasks under the ACTIVE milestone and the next one, and names the tracker it will use: Beads (`bd`) when the repo has `.beads`, GitHub Issues when it has a GitHub origin, otherwise payloads only.
-2. `scripts/pilot-pour.sh --apply` creates one ticket per task (title: the task text; body: milestone, Completion signal, Check; labels from `--labels` or the Pilot's `<!-- Pour labels: … -->` comment), dedupes by title first, and writes each ticket ID back into the Pilot in place.
+2. `scripts/pilot-pour.sh --apply` creates one ticket per task (title: the task text; body: milestone, Completion signal, Check; labels from `--labels` or the Pilot's `<!-- Pour labels: … -->` comment), dedupes by title first, and writes each ticket ID back into the Pilot in place. It refuses to create tickets from a Pilot that differs from `origin/main` unless you pass `--trust-local`.
 3. For a tracker the script cannot drive, such as Linear, create the ticket with your own tool and run `scripts/pilot-pour.sh --tag N ID` to write the ID back.
 4. The Owner commits the edited Pilot by PR. Dispatch the tickets through the normal queue.
 5. `STARVED` means nothing is pourable: do not manufacture tasks. Report it to the Owner, naming the next sketched milestone. The Owner runs Replan.

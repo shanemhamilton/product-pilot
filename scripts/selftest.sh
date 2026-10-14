@@ -140,7 +140,8 @@ printf '%s' "$P" | grep -q '1\. \[1.2\] Second slice :: Add export' || die "pour
 printf '%s' "$P" | grep -q 'dry run: 1 pourable' || die "pour dry run count"
 if command -v bd >/dev/null 2>&1; then
   bd init --prefix t --skip-hooks --skip-agents -q >/dev/null 2>&1 || die "bd init in the fixture repo"
-  sh "$HERE/pilot-pour.sh" --apply --tracker bd --labels next:code | grep -q 'created: t-' || die "pour creates a bead"
+  sh "$HERE/pilot-pour.sh" --apply --tracker bd 2>&1 | grep -q 'refusing --apply' || die "pour --apply must refuse without a reviewed origin/main"
+  sh "$HERE/pilot-pour.sh" --apply --tracker bd --labels next:code --trust-local | grep -q 'created: t-' || die "pour creates a bead"
   grep -qE '\- \[ \] \[t-[a-z0-9]+\] Add export' docs/product/PRODUCT_PILOT.md || die "pour wrote the bead id back"
   bd list --title "Add export" --json 2>/dev/null | grep -q 'next:code' || die "bead carries the label"
   ok "pour with beads"
