@@ -107,7 +107,7 @@ Add to the repo's pre-commit hook (`.githooks/pre-commit` with `git config core.
 sh {SCRIPTS}pilot-grep-checks.sh --pre-commit
 ```
 
-It fails the commit on a structural defect, or when the anchor is more than 20 commits behind HEAD and the commit does not touch the Pilot.
+It fails the commit on a structural defect. When the anchor is more than 20 commits behind HEAD and the commit does not touch the Pilot it prints a warning and lets the commit through, because workers must not edit the Pilot from a task worktree; set `PILOT_STRICT_ANCHOR=1` in the hook to refuse such commits instead. The scheduled reconcile in section 6 is the freshness control.
 
 ## 5. CI
 
@@ -123,7 +123,7 @@ The checkout needs full history (`fetch-depth: 0` on GitHub Actions) so the anch
 
 ## 6. Scheduling reconcile
 
-The skill does not schedule anything. Run `{SCRIPTS}pilot-reconcile.sh --run-checks --apply` from whatever already runs on a cadence in the host: a nightly workflow, the coordinator's cycle, a post-merge job. The command is idempotent and writes only when something changed.
+The skill does not schedule anything. Run `{SCRIPTS}pilot-reconcile.sh --run-checks --apply` from whatever already runs on a cadence in the host: a nightly workflow, the coordinator's cycle, a post-merge job. The command is idempotent and writes only when something changed. It ticks tasks from the tracker, so the job needs `bd` for Beads, an authenticated `gh` for GitHub tags, and `LINEAR_API_KEY` for Linear tags; without them those tasks are reported as unresolved and left open.
 
 ## 7. Notes for the Buzz desktop-app fleet (observed 2026-10-13)
 
