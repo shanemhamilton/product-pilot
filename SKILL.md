@@ -21,7 +21,7 @@ description: >
 
 One file per product, under 140 lines, that an agent reads before acting and a script keeps true. It exists so an agent pipeline can run for days: the queue refills from the roadmap, milestones advance on evidence, routine decisions resolve by default, and a human is asked only for what only a human can supply.
 
-The scripts in `scripts/` do the deterministic work. `pilot-banner.sh` prints the orientation. `pilot-grep-checks.sh` enforces the file contract in hooks and CI. `pilot-reconcile.sh` regenerates the machine sections, runs the Checks, and advances the ACTIVE milestone. `pilot-pour.sh` turns `[unpoured]` tasks into tracker tickets. `selftest.sh` proves the four work. Install them by copying or symlinking `scripts/` into the host repo; `references/AGENT_INSTRUCTION_REFERENCE.md` has the hook, CI, and dispatcher wiring.
+The scripts in `scripts/` do the deterministic work. `pilot-banner.sh` prints the orientation. `pilot-grep-checks.sh` enforces the file contract in hooks and CI. `pilot-reconcile.sh` regenerates the machine sections, ticks tasks whose tickets closed with evidence, runs the Checks, and advances the ACTIVE milestone. `pilot-pour.sh` turns `[unpoured]` tasks into Beads, Linear, or GitHub tickets. `selftest.sh` proves the four work. Install them by copying or symlinking `scripts/` into the host repo; `references/AGENT_INSTRUCTION_REFERENCE.md` has the hook, CI, and dispatcher wiring.
 
 ---
 
@@ -86,9 +86,9 @@ Output stays under 25 lines. A dispatcher pastes this output into every task pac
 
 Run when the project's tracker shows nothing ready for this project. Pour turns roadmap tasks into tickets; it never invents work.
 
-1. `scripts/pilot-pour.sh` lists the `[unpoured]` tasks under the ACTIVE milestone and the next one, and names the tracker it will use: Beads (`bd`) when the repo has `.beads`, GitHub Issues when it has a GitHub origin, otherwise payloads only.
-2. `scripts/pilot-pour.sh --apply` creates one ticket per task (title: the task text; body: milestone, Completion signal, Check; labels from `--labels` or the Pilot's `<!-- Pour labels: … -->` comment), dedupes by title first, and writes each ticket ID back into the Pilot in place. It refuses to create tickets from a Pilot that differs from `origin/main` unless you pass `--trust-local`.
-3. For a tracker the script cannot drive, such as Linear, create the ticket with your own tool and run `scripts/pilot-pour.sh --tag N ID` to write the ID back.
+1. `scripts/pilot-pour.sh` lists the `[unpoured]` tasks under the ACTIVE milestone and the next one, and names the tracker it will use: Beads (`bd`) when the repo has `.beads`, Linear when `LINEAR_API_KEY` is set and the Pilot carries `<!-- Linear team: KEY -->` (or you pass `--team KEY`), GitHub Issues when it has a GitHub origin, otherwise payloads only.
+2. `scripts/pilot-pour.sh --apply` creates one ticket per task (title: the task text; body: milestone, Completion signal, Check; labels from `--labels` or the Pilot's `<!-- Pour labels: … -->` comment, plus `Pilot: <product> — <milestone>` on Linear), dedupes by exact title first (open tickets on Beads and GitHub; issues not completed or canceled in the team on Linear), and writes each ticket ID back into the Pilot in place. It refuses to create tickets from a Pilot that differs from `origin/main` unless you pass `--trust-local`.
+3. For a tracker the script cannot drive, create the ticket with your own tool and run `scripts/pilot-pour.sh --tag N ID` to write the ID back.
 4. The Owner commits the edited Pilot by PR. Dispatch the tickets through the normal queue.
 5. `STARVED` means nothing is pourable: do not manufacture tasks. Report it to the Owner, naming the next sketched milestone. The Owner runs Replan.
 
@@ -101,8 +101,8 @@ Intake order for a dispatcher: human-filed tickets first, then confirmed bugs, t
 Evidence-driven maintenance. Runs after merges and releases, on a schedule, or when asked. No questions.
 
 1. Run `scripts/pilot-reconcile.sh` and read the dry-run output: shipped count, ACTIVE Check result, open task count, phase transition Check, decisions due, runway.
-2. Tick tasks whose tickets are closed or whose PRs are merged, and put the evidence on the line: the merge commit SHA, a build number, a receipt path, or a CI run URL. A PR number, "merged", or a date alone is rejected by the structure check. Verify in the tracker or `git log`, never from memory. The script does not know the tracker, so this step is yours.
-3. Run `scripts/pilot-reconcile.sh --run-checks --apply`. It regenerates Recent Shipped from git, sets the anchor and date, and moves `← ACTIVE` to the next milestone when the Check passes and every task is ticked. It writes a Changelog line for the move. Checks are shell commands from the Pilot, so they execute only with `--run-checks` and only when the whole working tree is identical to `origin/main`; on an unmerged branch pass `--trust-local` knowingly or leave checks skipped.
+2. The script resolves each open ACTIVE task's tag against its tracker and ticks the task when the ticket is closed and carries execution evidence, writing the evidence on the line: a Beads close reason or last comment with a commit SHA or build number (`[prefix-id]`), a merged GitHub PR's merge commit or the merge commit of the PR that closed an issue (`[#N]`, `[repo#N]`, `[owner/repo#N]`; a bare repo alias resolves through a Pilot link to that number, else the origin's owner), or a completed Linear issue's GitHub PR attachment resolved to its merge commit (`[KEY-N]`, needs `LINEAR_API_KEY`; a canceled issue does not count). The dry run prints `would tick`. A line reported as `CLOSED, no evidence` or `unresolved` is yours: find the merge commit SHA, build number, receipt path, or CI run URL in the tracker or `git log`, never from memory, and put it on the line. A PR number, "merged", or a date alone is rejected by the structure check.
+3. Run `scripts/pilot-reconcile.sh --run-checks --apply`. It regenerates Recent Shipped from git, writes the ticks from step 2, sets the anchor and date, and moves `← ACTIVE` to the next milestone when the Check passes and every task is ticked, counting the tasks it ticked in the same run. It writes a Changelog line for the move. Checks are shell commands from the Pilot, so they execute only with `--run-checks` and only when the whole working tree is identical to `origin/main`; on an unmerged branch pass `--trust-local` knowingly or leave checks skipped.
 4. For each agent-tier decision past its Deadline: apply the Default to the thing it governs, move the row to the ROADMAP.md Decision Log with "default applied at deadline", and remove it from Decision Pending.
 5. Blockers: remove a blocker only with evidence (merged PR, passing build, deploy readback). Add a new one only if it stops a release, with a ticket.
 6. `phase transition: check=PASS` means the trigger holds: change the phase label, replace the Phase Transitions row with the next transition, add a Changelog line. Update which docs are maintained per the Phases table.
@@ -177,7 +177,7 @@ Only on explicit request. Adds PRODUCT_OVERVIEW, FEATURE_INVENTORY, METRICS_AND_
 - 140 lines or fewer. Detail lives in ROADMAP.md.
 - Exactly one `← ACTIVE` marker, at the end of the milestone line.
 - Every task line is `- [ ] [TICKET-ID] text` or `- [ ] [unpoured] text`. A task waiting on a decision ends with `(blocked-on D<n>)`.
-- A ticked task cites execution evidence on its line: a commit SHA, a build number, a receipt or artifact path, or a CI run URL. A PR number, "merged", or a date alone does not count, and `pilot-grep-checks.sh` rejects it.
+- A ticked task cites execution evidence on its line: a commit SHA, a build number, a receipt or artifact path, or a CI run URL. A PR number, "merged", or a date alone does not count, and `pilot-grep-checks.sh` rejects it. `pilot-reconcile.sh` writes the evidence itself when it ticks from the tracker.
 - Every milestone has `Check:` with one backticked command, or `manual — <evidence>`, and a Completion signal.
 - A milestone is two to six tasks; a task is one pull request. Split anything larger.
 - Blockers are bullets with unblock condition, owner, ticket, since-date. No prose paragraphs.
@@ -198,10 +198,10 @@ Only on explicit request. Adds PRODUCT_OVERVIEW, FEATURE_INVENTORY, METRICS_AND_
 | Mechanism | Where it runs | What it guarantees |
 |-----------|---------------|--------------------|
 | `pilot-banner.sh` | SessionStart hook; pasted into dispatched task packets | Every session and every worker sees phase, blockers, ACTIVE tasks, runway |
-| `pilot-grep-checks.sh --pre-commit` | Git pre-commit | No structural defect lands; anchor cannot drift more than 20 commits without a Pilot edit |
+| `pilot-grep-checks.sh --pre-commit` | Git pre-commit | No structural defect lands. Anchor drift past 20 commits is a warning on a commit that does not touch the Pilot, and a refusal only with `PILOT_STRICT_ANCHOR=1`; the scheduled reconcile is the freshness control |
 | `pilot-grep-checks.sh --ci` | Pull-request CI | Same contract for workers that run no local hooks |
-| `pilot-reconcile.sh --run-checks --apply` | Scheduled job or post-merge step run by the Owner on the merged state | Recent Shipped, anchor, and ACTIVE reflect git and the Checks; Checks run only when the working tree is identical to `origin/main` |
-| `pilot-pour.sh --apply` | The dispatcher or Owner, when a project queue is empty | `[unpoured]` tasks become tracker tickets with the Check as acceptance, and their IDs are written back |
+| `pilot-reconcile.sh --run-checks --apply` | Scheduled job or post-merge step run by the Owner on the merged state | Recent Shipped, anchor, ticks, and ACTIVE reflect git, the tracker (Beads, GitHub, Linear), and the Checks; Checks run only when the working tree is identical to `origin/main` |
+| `pilot-pour.sh --apply` | The dispatcher or Owner, when a project queue is empty | `[unpoured]` tasks become Beads, Linear, or GitHub tickets with the Check as acceptance, and their IDs are written back |
 
 What this does not reach is listed in `TOOLING_GAPS.md`. Write the repo-specific gaps into the Pilot's Open Tooling Gaps section.
 
@@ -293,7 +293,7 @@ The reconcile script already works on 2.2 files for Recent Shipped and the ancho
 >
 > ## Open Tooling Gaps
 >
-> - No CI check on this repo yet; freshness relies on the pre-commit guard.
+> - No CI check on this repo yet; freshness relies on the scheduled reconcile.
 >
 > ## Changelog
 >

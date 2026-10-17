@@ -3,8 +3,10 @@
 # Generalized from the myskiniq tenant's scripts/pilot-grep-checks.sh (2026-10).
 #
 #   --banner      SessionStart display. Always exits 0.
-#   --pre-commit  Exit 1 on a structural FAIL, or when the anchor is more than
-#                 20 commits behind HEAD and this commit does not touch the Pilot.
+#   --pre-commit  Exit 1 on a structural FAIL. When the anchor is more than 20 commits behind
+#                 HEAD and the commit does not touch the Pilot it prints a warning and exits 0;
+#                 PILOT_STRICT_ANCHOR=1 turns that warning into exit 1. The scheduled reconcile
+#                 (reference section 6) is the freshness control, not the worker's commit.
 #   --ci          Exit 1 on a structural FAIL. Divergence is a warning only.
 #
 # Override the Pilot location with PILOT_PATH=path/to/PRODUCT_PILOT.md.
@@ -14,7 +16,7 @@ MODE="${1:---banner}"
 [ -f "${PILOT:-}" ] || { echo "no PRODUCT_PILOT.md found"; exit 0; }
 
 WARN_DIVERGENCE=10
-BLOCK_DIVERGENCE=20
+BLOCK_DIVERGENCE=20  # warn-only in --pre-commit unless PILOT_STRICT_ANCHOR=1
 FAILS=0; DETAIL=""; WARNS=""
 fail() { FAILS=$((FAILS + 1)); DETAIL="${DETAIL}  FAIL: $1
 "; }
@@ -91,7 +93,8 @@ case "$MODE" in
   --pre-commit)
     if [ "$FAILS" -gt 0 ]; then printf 'Pilot check: %s defect(s) in %s\n%s' "$FAILS" "$PILOT" "$DETAIL" >&2; exit 1; fi
     if [ "$DIVERGENCE" -gt "$BLOCK_DIVERGENCE" ] && ! git diff --cached --name-only | grep -qx "$PILOT"; then
-      echo "Pilot check: anchor $LAST_HASH is $DIVERGENCE commits behind HEAD; run scripts/pilot-reconcile.sh --apply and stage $PILOT" >&2; exit 1
+      echo "Pilot check: anchor $LAST_HASH is $DIVERGENCE commits behind HEAD; the Owner runs scripts/pilot-reconcile.sh --apply and lands $PILOT by PR (warning; PILOT_STRICT_ANCHOR=1 refuses the commit)" >&2
+      [ "${PILOT_STRICT_ANCHOR:-0}" = 1 ] && exit 1
     fi
     exit 0 ;;
   --ci)

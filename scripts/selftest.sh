@@ -1,7 +1,10 @@
 #!/bin/sh
 # One runnable check for the Pilot scripts: builds a throwaway repo with a filled
-# format-3.0 Pilot and asserts the checks, banner, and reconcile behave.
+# format-3.0 Pilot and asserts the checks, banner, reconcile, and pour behave.
+# Offline by design: no origin, no LINEAR_API_KEY, so the GitHub and Linear tracker paths
+# are not exercised here (see TOOLING_GAPS.md); Beads is exercised when bd is installed.
 set -eu
+unset LINEAR_API_KEY
 HERE=$(cd "$(dirname "$0")" && pwd)
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 cd "$T" && git init -q && git config user.email t@t && git config user.name t
@@ -97,7 +100,7 @@ git add . && git commit -qm 'docs: pilot'
 for i in 1 2 3 4 5 6 7 8 9 10 11 12; do echo "$i" >> src/a.txt; git commit -qam "fix: change $i"; done
 
 ok() { echo "ok   $1"; }
-die() { echo "FAIL $1" >&2; grep -n -E "ACTIVE|^- \*\*" docs/product/PRODUCT_PILOT.md >&2; exit 1; }
+die() { echo "FAIL $1" >&2; grep -n -E "ACTIVE|^- \*\*|- \[.\] \[" docs/product/PRODUCT_PILOT.md >&2; exit 1; }
 
 sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null || die "grep-checks --ci should pass"; ok "grep-checks pass on a valid pilot"
 sh "$HERE/pilot-grep-checks.sh" --banner | grep -q 'commits behind' || die "banner should warn on divergence"; ok "divergence warning"
@@ -109,6 +112,7 @@ printf '%s' "$B" | grep -q 'open_active=1 pourable=1' || die "banner runway"; ok
 
 R=$(sh "$HERE/pilot-reconcile.sh")
 printf '%s' "$R" | grep -q 'check=skipped open_tasks=1' || die "checks must not run without --run-checks"
+printf '%s' "$R" | grep -q 'unresolved (LINEAR_API_KEY not set): \[T-2\]' || die "a Linear-shaped tag without a key is reported unresolved, not ticked"
 R=$(sh "$HERE/pilot-reconcile.sh" --run-checks)
 printf '%s' "$R" | grep -q 'checks skipped: no origin/main' || die "checks must not run without a reviewed origin/main"; ok "check execution is opt-in and guarded"
 R=$(sh "$HERE/pilot-reconcile.sh" --run-checks --trust-local)
@@ -141,6 +145,7 @@ grep -q 'fix: change 12' docs/product/PRODUCT_PILOT.md || die "regen without rul
 P=$(sh "$HERE/pilot-pour.sh" --tracker none)
 printf '%s' "$P" | grep -q '1\. \[1.2\] Second slice :: Add export' || die "pour dry run lists the task"
 printf '%s' "$P" | grep -q 'dry run: 1 pourable' || die "pour dry run count"
+sh "$HERE/pilot-pour.sh" --tracker linear >/dev/null 2>&1 && die "pour --tracker linear must refuse without LINEAR_API_KEY"; ok "pour linear refuses without a key"
 if command -v bd >/dev/null 2>&1; then
   bd init --prefix t --skip-hooks --skip-agents -q >/dev/null 2>&1 || die "bd init in the fixture repo"
   sh "$HERE/pilot-pour.sh" --apply --tracker bd 2>&1 | grep -q 'refusing --apply' || die "pour --apply must refuse without a reviewed origin/main"
@@ -148,11 +153,37 @@ if command -v bd >/dev/null 2>&1; then
   grep -qE '\- \[ \] \[t-[a-z0-9]+\] Add export' docs/product/PRODUCT_PILOT.md || die "pour wrote the bead id back"
   bd list --title "Add export" --json 2>/dev/null | grep -q 'next:code' || die "bead carries the label"
   ok "pour with beads"
+  # Reconcile ticks from the tracker: a closed bead is ticked only when its close reason or last comment carries evidence.
+  BID=$(grep -oE '\[t-[a-z0-9]+\] Add export' docs/product/PRODUCT_PILOT.md | sed 's/^\[//; s/\].*//')
+  R=$(sh "$HERE/pilot-reconcile.sh"); printf '%s' "$R" | grep -q "open (open): \[$BID\]" || die "reconcile reports the open bead"
+  bd close "$BID" --reason "done" >/dev/null 2>&1 || die "bd close without evidence"
+  R=$(sh "$HERE/pilot-reconcile.sh"); printf '%s' "$R" | grep -q "CLOSED, no evidence: \[$BID\] Add export" || die "a closed bead without evidence is reported, not ticked"
+  bd reopen "$BID" >/dev/null 2>&1 && bd close "$BID" --reason "merged at a1b2c3d" >/dev/null 2>&1 || die "bd reopen and close with a SHA"
+  R=$(sh "$HERE/pilot-reconcile.sh"); printf '%s' "$R" | grep -q "would tick: \[$BID\] \`a1b2c3d\`" || die "dry run prints would tick with the SHA"
+  grep -q "\- \[ \] \[$BID\] Add export" docs/product/PRODUCT_PILOT.md || die "dry run must not tick"
+  R=$(sh "$HERE/pilot-reconcile.sh" --apply); printf '%s' "$R" | grep -q "ticked: \[$BID\] \`a1b2c3d\`" || die "reconcile --apply ticks"
+  grep -q "\- \[x\] \[$BID\] Add export at \`a1b2c3d\`" docs/product/PRODUCT_PILOT.md || die "the tick carries the SHA on the line"
+  sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null || die "grep-checks accept the script's tick"
+  ok "reconcile ticks from beads"
 else
   sh "$HERE/pilot-pour.sh" --tag 1 X-1 >/dev/null && grep -q '\[X-1\] Add export' docs/product/PRODUCT_PILOT.md || die "pour --tag writes back"
-  ok "pour --tag (bd not installed)"
+  ok "pour --tag (bd not installed; reconcile tick from beads not exercised)"
 fi
 sh "$HERE/pilot-pour.sh" | grep -q STARVED || die "pour reports STARVED when nothing is pourable"; ok "pour starvation"
+
+# Pre-commit guard: past 20 commits of anchor drift, a commit that does not stage the Pilot gets a warning and exit 0;
+# PILOT_STRICT_ANCHOR=1 refuses it; staging the Pilot satisfies strict mode.
+sed -i.bak "s/Last commit captured: [0-9a-f]*/Last commit captured: $A/" docs/product/PRODUCT_PILOT.md && rm -f docs/product/PRODUCT_PILOT.md.bak
+git commit -qam 'docs: reset anchor for the guard test'
+for i in 13 14 15 16 17 18 19 20 21; do echo "$i" >> src/a.txt; git commit -qam "fix: change $i"; done
+[ "$(git rev-list --count "$A..HEAD")" -gt 20 ] || die "fixture divergence must exceed 20"
+echo y > src/b.txt && git add src/b.txt
+W=$(sh "$HERE/pilot-grep-checks.sh" --pre-commit 2>&1) || die "pre-commit must exit 0 on a non-Pilot commit at 21+ divergence"
+printf '%s' "$W" | grep -q 'commits behind HEAD' || die "pre-commit prints the drift warning"
+PILOT_STRICT_ANCHOR=1 sh "$HERE/pilot-grep-checks.sh" --pre-commit >/dev/null 2>&1 && die "PILOT_STRICT_ANCHOR=1 must refuse the commit"
+printf "\n" >> docs/product/PRODUCT_PILOT.md && git add docs/product/PRODUCT_PILOT.md
+PILOT_STRICT_ANCHOR=1 sh "$HERE/pilot-grep-checks.sh" --pre-commit >/dev/null 2>&1 || die "strict mode passes when the Pilot is staged"
+git reset -q; ok "pre-commit anchor guard warns, strict refuses"
 
 printf '\n- **[1.3] Dup** ← ACTIVE\n' >> docs/product/PRODUCT_PILOT.md
 sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null 2>&1 && die "two ACTIVE markers must fail"; ok "grep-checks fail on two ACTIVE"

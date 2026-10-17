@@ -50,3 +50,31 @@ pilot_decisions_due() {
       if (c[4] == tier && c[6] != "" && c[6] <= today) printf "%s | %s | default: %s | deadline: %s\n", c[2], c[3], c[5], c[6]
     }' "$PILOT"
 }
+
+# Execution evidence in the form pilot-grep-checks.sh accepts, extracted from free text such as a
+# close reason or a comment: a commit SHA (backticked), then "build #N", then a CI run URL.
+pilot_evidence() {
+  for w in $(printf '%s' "$1" | grep -oE '(^|[^0-9A-Za-z])[0-9a-f]{7,40}([^0-9A-Za-z]|$)' | tr -cd '0-9a-f\n'); do
+    case "$w" in *[a-f]*) case "$w" in *[0-9]*) printf '`%s`\n' "$w"; return;; esac;; esac
+  done
+  e=$(printf '%s' "$1" | grep -oE '(^|[^A-Za-z])(build|builds|BK|Buildkite|run) #?[0-9]+' | head -1)
+  [ -n "$e" ] && { printf 'build #%s\n' "${e##*[!0-9]}"; return; }
+  printf '%s' "$1" | grep -oE 'https?://[^ )]+/(builds|actions/runs)/[0-9]+' | head -1
+}
+
+# Minimal JSON without jq. json_str: stdin as a JSON string body (no quotes). json_field: the
+# first "name": "value" in stdin; a value holding an escaped quote is cut at that quote.
+json_str() { sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr '\t' ' ' | awk '{printf "%s\\n", $0}' | sed 's/\\n$//'; }
+json_field() { grep -oE "\"$1\": *\"[^\"]*\"" | head -1 | sed 's/^[^:]*: *"//; s/"$//'; }
+
+# Linear GraphQL. $1 = document with no user text in it, $2 = variables as a JSON object.
+# Prints the response; an API error goes to stderr and the response still prints.
+linear_gql() {
+  v=${2:-"{}"}; k=$(mktemp -d) || return 1  # the key travels in a 0700 scratch dir, never in argv
+  printf 'header = "Authorization: %s"\n' "${LINEAR_API_KEY:-}" > "$k/auth"
+  r=$(printf '{"query":"%s","variables":%s}' "$(printf '%s\n' "$1" | json_str)" "$v" | curl -sS --max-time 30 \
+    -K "$k/auth" -H 'Content-Type: application/json' --data-binary @- https://api.linear.app/graphql 2>/dev/null)
+  rm -f "$k/auth"; rmdir "$k"
+  case "$r" in *'"errors"'*) echo "linear: $(printf '%s' "$r" | json_field message)" >&2;; esac
+  printf '%s\n' "$r"
+}

@@ -7,6 +7,7 @@
 <!-- Owner: [PLACEHOLDER: OWNER — the one persona or person whose PRs edit this file] -->
 <!-- Edit policy: Owner edits land by PR. Recent Shipped, the anchor, and the ACTIVE marker are maintained by scripts/pilot-reconcile.sh; do not hand-edit them. Workers never edit this file from a task worktree. -->
 <!-- Pour labels: [PLACEHOLDER: LABELS_OR_none — labels pilot-pour.sh puts on new tickets, e.g. next:code] -->
+<!-- Linear team: [PLACEHOLDER: TEAM_KEY_OR_none — pilot-pour.sh pours into this Linear team when LINEAR_API_KEY is set; remove the comment for Beads or GitHub] -->
 <!-- Target: under 140 lines. Detail belongs in ROADMAP.md. -->
 
 ## Quick Orientation
@@ -36,11 +37,11 @@
 
 ### Pour (when the work queue is empty)
 
-Run `scripts/pilot-pour.sh --apply`. It creates one tracker ticket per `[unpoured]` task under ACTIVE, then the next milestone (Beads by default, GitHub Issues otherwise; `--tag N ID` for a tracker you drive yourself), with the milestone `Check` as acceptance, and writes the IDs back here. Never invent tasks. `STARVED` means nothing is pourable: report it to the Owner.
+Run `scripts/pilot-pour.sh --apply`. It creates one tracker ticket per `[unpoured]` task under ACTIVE, then the next milestone (Beads when `.beads` exists, Linear when `LINEAR_API_KEY` is set and the Linear team comment above names a team, GitHub Issues otherwise; `--tag N ID` for a tracker you drive yourself), with the milestone `Check` as acceptance, and writes the IDs back here. Never invent tasks. `STARVED` means nothing is pourable: report it to the Owner.
 
 ### Reconcile (after merges and releases, or on a schedule)
 
-Run `scripts/pilot-reconcile.sh --run-checks --apply` on the merged state. It regenerates Recent Shipped, updates the anchor, runs each `Check` (only when this file matches `origin/main`), and reports overdue decisions and runway. Then tick tasks whose tickets are closed, let the script advance `← ACTIVE` when the milestone Check passes, apply the Default of any agent-tier decision past its Deadline, and log it in `ROADMAP.md`.
+Run `scripts/pilot-reconcile.sh --run-checks --apply` on the merged state. It regenerates Recent Shipped, updates the anchor, ticks tasks whose tickets closed with execution evidence (Beads, GitHub, Linear) and writes the evidence on the line, runs each `Check` (only when this file matches `origin/main`), and reports overdue decisions and runway. Then tick only what it reported as `CLOSED, no evidence` or `unresolved`, with evidence you verified in the tracker or `git log`, let the script advance `← ACTIVE` when the milestone Check passes, apply the Default of any agent-tier decision past its Deadline, and log it in `ROADMAP.md`.
 
 ### Decide
 
@@ -121,7 +122,7 @@ Routine product choices are yours: pick, record one line in the task or the Deci
 
 <!-- What is NOT enforced here. If empty, write "_No known gaps._" and keep the section. -->
 
-- [PLACEHOLDER: GAP — e.g. "No CI check on this repo; freshness relies on the pre-commit guard."]
+- [PLACEHOLDER: GAP — e.g. "No CI check on this repo; freshness relies on the scheduled reconcile."]
 
 ---
 
