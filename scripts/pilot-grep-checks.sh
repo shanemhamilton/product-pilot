@@ -11,10 +11,12 @@
 set -u
 . "$(dirname "$0")/pilot-lib.sh"
 MODE="${1:---banner}"
-[ -f "${PILOT:-}" ] || { echo "no PRODUCT_PILOT.md found"; exit 0; }
+if [ ! -f "${PILOT:-}" ]; then
+  echo "no PRODUCT_PILOT.md found"
+  case "$MODE" in --ci|--pre-commit) exit 1;; esac  # a gate must not pass on a missing Pilot
+  exit 0
+fi
 
-WARN_DIVERGENCE=10
-BLOCK_DIVERGENCE=20
 FAILS=0; DETAIL=""; WARNS=""
 fail() { FAILS=$((FAILS + 1)); DETAIL="${DETAIL}  FAIL: $1
 "; }
@@ -25,7 +27,9 @@ warn() { WARNS="${WARNS}  WARN: $1
 git check-ignore -q "$PRODUCT_DOCS" 2>/dev/null && fail "$PRODUCT_DOCS is gitignored; the Pilot is not tracked"
 
 # 2. No unfilled placeholders in the product docs.
-grep -rq "\[PLACEHOLDER:" "$PRODUCT_DOCS" 2>/dev/null && fail "unfilled [PLACEHOLDER:] markers survive in $PRODUCT_DOCS"
+# A root-level Pilot has docs dir "."; scan only the Pilot then, not the whole repo.
+PH_TARGET="$PRODUCT_DOCS"; [ "$PRODUCT_DOCS" = . ] && PH_TARGET="$PILOT"
+grep -rq "\[PLACEHOLDER:" "$PH_TARGET" 2>/dev/null && fail "unfilled [PLACEHOLDER:] markers survive in $PRODUCT_DOCS"
 
 # 3. Exactly one ACTIVE marker.
 ACTIVE_COUNT=$(grep -cE "(← ACTIVE|<- ACTIVE)[[:space:]]*$" "$PILOT" || true)
@@ -53,7 +57,7 @@ LINES=$(wc -l < "$PILOT" | tr -d ' ')
 
 # 7. Format 3.0: every open task carries a ticket tag or [unpoured].
 FMT=$(pilot_format_version)
-UNTAGGED=$(awk '/^## Active Milestones/{p=1} /^## Decision Pending/{p=0} p' "$PILOT" | grep -cE '^[[:space:]]*- \[[ x]\] [^[]' || true)
+UNTAGGED=$(awk '/^## Active Milestones/{p=1} /^## Decision Pending/{p=0} p' "$PILOT" | grep -cE '^[[:space:]]*- \[[ xX]\] [^[]' || true)
 if [ "$UNTAGGED" != "0" ]; then
   case "$FMT" in 3*) fail "$UNTAGGED task(s) without a [TICKET] or [unpoured] tag";; *) warn "$UNTAGGED task(s) without a [TICKET] tag (format $FMT; required from 3.0)";; esac
 fi
@@ -61,7 +65,7 @@ fi
 # 8. Every ticked task cites execution evidence on its line: a commit SHA, a build number,
 #    a receipt or artifact path, or a CI run URL. A PR number, "merged", or a date alone is not evidence.
 has_evidence() {
-  printf '%s' "$1" | grep -qE '`[0-9a-f]{7,40}`|(^|[^A-Za-z])(build|builds|BK|Buildkite|run) #?[0-9]+|https?://[^ )]+/(builds|actions/runs)/[0-9]+|(^|[^A-Za-z0-9])(OUTBOX|receipts?|artifacts?|manifests?|proofs?)/[A-Za-z0-9_./-]+' && return 0
+  printf '%s' "$1" | grep -qE '`[0-9a-f]{7,40}`|(^|[^A-Za-z])([Bb]uild|[Bb]uilds|run) #[0-9]+|(BK|Buildkite)[ -]?#?[0-9]+|https?://[^ )]+/(builds|actions/runs)/[0-9]+|(^|[^A-Za-z0-9])(OUTBOX|receipts?|artifacts?|manifests?|proofs?)/[A-Za-z0-9_./-]+' && return 0
   for w in $(printf '%s' "$1" | grep -oE '(^|[^0-9A-Za-z])[0-9a-f]{7,40}([^0-9A-Za-z]|$)' | tr -cd '0-9a-f\n'); do
     case "$w" in *[a-f]*) case "$w" in *[0-9]*) return 0;; esac;; esac
   done
@@ -72,7 +76,7 @@ while IFS= read -r line; do
   [ -n "$line" ] || continue
   has_evidence "$line" || NOEVID=$((NOEVID + 1))
 done <<EOF
-$(awk '/^## Active Milestones/{p=1} /^## Decision Pending/{p=0} p' "$PILOT" | grep -E '^[[:space:]]*- \[x\] ')
+$(awk '/^## Active Milestones/{p=1} /^## Decision Pending/{p=0} p' "$PILOT" | grep -E '^[[:space:]]*- \[[xX]\] ')
 EOF
 if [ "$NOEVID" != "0" ]; then
   case "$FMT" in 3*) fail "$NOEVID ticked task(s) without a commit SHA, build number, receipt path, or CI run URL";; *) warn "$NOEVID ticked task(s) without execution evidence (required from 3.0)";; esac

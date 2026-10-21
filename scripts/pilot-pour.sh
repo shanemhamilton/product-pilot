@@ -26,7 +26,7 @@ while [ $# -gt 0 ]; do case "$1" in
   *) echo "usage: $0 [--apply] [--tracker bd|gh|none] [--labels a,b] [--all] [--tag N ID] [--trust-local]" >&2; exit 2;; esac; shift; done
 if [ "$APPLY" = 1 ] && [ "$TRUST" = 0 ]; then
   if ! git rev-parse -q --verify origin/main >/dev/null 2>&1; then echo "refusing --apply: no origin/main to compare against (pass --trust-local)"; exit 1
-  elif ! git diff --quiet origin/main -- "$PILOT" 2>/dev/null; then echo "refusing --apply: $PILOT differs from origin/main; merge it first or pass --trust-local"; exit 1; fi
+  elif ! pilot_is_reviewed; then echo "refusing --apply: $PILOT is untracked or differs from origin/main; merge it first or pass --trust-local"; exit 1; fi
 fi
 [ -z "$LABELS" ] && LABELS=$(grep -m1 -oE 'Pour labels: [^>]+' "$PILOT" | sed 's/Pour labels: //; s/ *--$//; s/ *$//')
 if [ -z "$TRACKER" ]; then
@@ -78,7 +78,7 @@ printf '%s\n' "$REC" | awk -F"$US" '$1=="T"' | while IFS="$US" read -r _ idx lin
         [ -n "$ID" ] && echo "   created: $ID"
       fi ;;
     gh)
-      ID=$(gh issue list --state open --search "\"$text\" in:title" --json number --jq '.[0].number' 2>/dev/null)
+      ID=$(gh issue list --state open --limit 100 --search "\"$text\" in:title" --json number,title --jq '.[]|"\(.number)\t\(.title)"' 2>/dev/null | T="$text" awk -F'\t' '$2==ENVIRON["T"]{print $1; exit}')
       if [ -n "$ID" ]; then ID="#$ID"; echo "   exists: $ID"; else
         # shellcheck disable=SC2086
         URL=$(gh issue create --title "$text" --body-file "$TMPBODY" ${LABELS:+--label "$LABELS"} 2>/dev/null)

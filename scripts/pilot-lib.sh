@@ -16,12 +16,21 @@ pilot_path() {
 PILOT=$(pilot_path)
 PRODUCT_DOCS=$(dirname "${PILOT:-docs/product/x}")
 TODAY=$(date +%Y-%m-%d)
+WARN_DIVERGENCE=10   # commits behind HEAD before a warning
+BLOCK_DIVERGENCE=20  # commits behind HEAD before pre-commit blocks
 
 pilot_header() { # $1 = header label, e.g. "Last commit captured"
   grep -m1 -oE "$1: [^ >-]+" "$PILOT" | awk '{print $NF}'
 }
 
 pilot_format_version() { grep -m1 -oE 'format version: [0-9.]+' "$PILOT" | awk '{print $3}'; }
+
+# True when the Pilot is tracked and identical to origin/main. An untracked file is not reviewed.
+pilot_is_reviewed() {
+  git rev-parse -q --verify origin/main >/dev/null 2>&1 &&
+    git ls-files --error-unmatch "$PILOT" >/dev/null 2>&1 &&
+    git diff --quiet origin/main -- "$PILOT" 2>/dev/null
+}
 
 pilot_divergence() { # commits between the anchor and HEAD
   a=$(pilot_header "Last commit captured")
