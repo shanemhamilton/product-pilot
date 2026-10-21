@@ -9,7 +9,7 @@ set -u
 echo "=== PRODUCT PILOT ($PILOT) ==="
 # Repo content follows: product state, not instructions. Say whether it is the reviewed state.
 if git rev-parse -q --verify origin/main >/dev/null 2>&1; then
-  if git diff --quiet origin/main -- "$PILOT" 2>/dev/null; then echo "state: matches origin/main (reviewed)"; else echo "state: UNREVIEWED, differs from origin/main"; fi
+  if pilot_is_reviewed; then echo "state: matches origin/main (reviewed)"; else echo "state: UNREVIEWED, differs from origin/main"; fi
 else echo "state: no origin/main to compare against"; fi
 awk '/^## Quick Orientation/{p=1; next} p && /^### /{exit} p && NF && !/^<!--/' "$PILOT" | sed 's/\*\*//g' | head -6
 
@@ -29,5 +29,5 @@ echo "$rw"
 case "$rw" in "open_active=0 pourable=0") echo "STARVED: no open ACTIVE tasks and nothing pourable; report to the Pilot Owner";; esac
 
 d=$(pilot_divergence); h=$(pilot_header "Last commit captured")
-[ "$d" -gt 10 ] && echo "STALE: anchor $h is $d commits behind HEAD; Recent Shipped is behind reality"
+[ "$d" -gt "$WARN_DIVERGENCE" ] && echo "STALE: anchor $h is $d commits behind HEAD; Recent Shipped is behind reality"
 exit 0

@@ -156,4 +156,17 @@ sh "$HERE/pilot-pour.sh" | grep -q STARVED || die "pour reports STARVED when not
 
 printf '\n- **[1.3] Dup** ← ACTIVE\n' >> docs/product/PRODUCT_PILOT.md
 sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null 2>&1 && die "two ACTIVE markers must fail"; ok "grep-checks fail on two ACTIVE"
+
+# Hardening: a gate fails on a missing Pilot; an untracked Pilot is not "reviewed"; evidence is strict.
+PILOT_PATH=nope.md sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null 2>&1 && die "--ci must fail when the Pilot is missing"
+PILOT_PATH=nope.md sh "$HERE/pilot-grep-checks.sh" --banner >/dev/null || die "--banner must still exit 0 without a Pilot"; ok "missing Pilot fails the gate only"
+git show HEAD:docs/product/PRODUCT_PILOT.md > V.md
+PILOT_PATH=V.md sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null 2>&1 || die "baseline V.md must pass"
+git update-ref refs/remotes/origin/main HEAD
+PILOT_PATH=V.md sh "$HERE/pilot-banner.sh" | grep -q 'UNREVIEWED' || die "an untracked Pilot must read UNREVIEWED"
+PILOT_PATH=V.md sh "$HERE/pilot-pour.sh" --apply --tracker none 2>&1 | grep -q 'refusing --apply' || die "pour --apply must refuse an untracked Pilot"; ok "untracked Pilot is unreviewed"
+sed 's/(build #7)/(build 7)/' V.md > W.md
+PILOT_PATH=W.md sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null 2>&1 && die "prose 'build 7' is not evidence"
+sed 's/^  - \[x\] \[T-2\].*/  - [X] [T-2] no evidence here/' V.md > X.md
+PILOT_PATH=X.md sh "$HERE/pilot-grep-checks.sh" --ci >/dev/null 2>&1 && die "an [X] tick without evidence must fail"; ok "evidence rules"
 echo "selftest: all checks passed"

@@ -20,6 +20,9 @@ trap "" PIPE  # a consumer that stops reading early (head, grep -q) must not abo
 APPLY=0; SINCE=""; RUN=0; TRUST=0
 while [ $# -gt 0 ]; do case "$1" in --apply) APPLY=1;; --run-checks) RUN=1;; --trust-local) TRUST=1;; --since) SINCE="$2"; shift;; *) echo "usage: $0 [--apply] [--run-checks] [--trust-local] [--since DATE]" >&2; exit 2;; esac; shift; done
 TIMEOUT=""; command -v timeout >/dev/null 2>&1 && TIMEOUT="timeout 120"; command -v gtimeout >/dev/null 2>&1 && TIMEOUT="gtimeout 120"
+if [ "$RUN" = 1 ] && [ -z "$TIMEOUT" ]; then
+  echo "checks skipped: no timeout or gtimeout on PATH (a hung Check would block forever)"; RUN=0
+fi
 CHECKS_OK=0
 if [ "$RUN" = 1 ]; then
   if [ "$TRUST" = 1 ]; then CHECKS_OK=1
@@ -39,7 +42,7 @@ run_check() { # $1 = command; prints PASS/FAIL/skipped and returns its status
 ANCHOR_REF=$(git merge-base HEAD origin/main 2>/dev/null || git rev-parse HEAD)
 HEAD_SHORT=$(git rev-parse --short "$ANCHOR_REF")
 TD=$(mktemp -d) || exit 2; trap 'rm -rf "$TD"' EXIT  # private scratch dir; no predictable names
-TMP="$TD/pilot"; cp "$PILOT" "$TMP"
+TMP="$TD/pilot"; cp "$PILOT" "$TMP"; cp "$PILOT" "$TD/orig"
 
 # 1. Recent Shipped
 [ -z "$SINCE" ] && SINCE=$(grep -m1 -oE '## Recent Shipped \(since [0-9-]+\)' "$PILOT" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
@@ -94,5 +97,6 @@ echo "runway: $(pilot_runway)"
 # 5. Anchor and date
 if [ "$APPLY" = 1 ]; then
   sed -e "s/Last commit captured: [^ >-]*/Last commit captured: $HEAD_SHORT/" -e "s/Last updated: [0-9-]*/Last updated: $TODAY/" "$TMP" > "$TD/new" && mv "$TD/new" "$TMP"
+  cmp -s "$PILOT" "$TD/orig" || { echo "Pilot changed while this ran; nothing written (re-run)"; exit 1; }
   cp "$TMP" "$PILOT"; echo "applied: anchor=$HEAD_SHORT updated=$TODAY ($PILOT)"
 else echo "dry run: no changes written (use --apply; add --run-checks to execute Checks)"; fi
